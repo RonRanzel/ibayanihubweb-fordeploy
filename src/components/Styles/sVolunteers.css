@@ -1,66 +1,268 @@
-.header-row {
+@font-face {
+    font-family: 'Poppins-Bold';
+    src: url('../Assets/fonts/Poppins-Bold.ttf');
+}
+@font-face {
+    font-family: 'Poppins-Semi';
+    src: url('../Assets/fonts/Poppins-SemiBold.ttf');
+}
+@font-face {
+    font-family: 'Poppins-Reg';
+    src: url('../Assets/fonts/Poppins-Regular.ttf');
+}
+
+#volunteers-container {
+    padding: 20px;
+}
+
+.volunteers-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+.volunteers-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.volunteers-date-time-box {
+    background: #fff;
+    border-radius: 8px;
+    border: #737373 1px solid;
+    padding: 8px 16px;
+    text-align: center;
+}
+.volunteers-date {
+    color: #CB1E2A;
+    font-weight: 700;
+    font-size: 16px;
+}
+.volunteers-time {
+    color: #222;
+    font-weight: 500;
+    font-size: 15px;
+}
+.volunteers-title-main {
+    font-weight: 700;
+    width: 50%;
+    text-align: center;
+    font-size: 28px;
+    background: #fff;
+    border-radius: 8px;
+    border: #737373 1px solid;
+    padding: 8px 32px;
+}
+.volunteers-header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.volunteers-admin-profile {
+    background: #fff;
+    border-radius: 8px;
+    border: #737373 1px solid;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.volunteers-admin-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #eee;
+    margin-right: 8px;
+}
+.volunteers-admin-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.volunteers-admin-name {
+    font-weight: 700;
+    color: #CB1E2A;
+    font-size: 16px;
+}
+.volunteers-admin-email {
+    font-size: 13px;
+    color: #222;
+}
+
+.volunteers-top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 20px 0;
-    padding: 0 20px;
 }
-
-.page-title {
-    font-size: 28px;
-    font-weight: bold;
-    color: #2c3e50;
+.volunteers-tabs {
+    display: flex;
+    background: #fff;
+    border-radius: 9px;
+    padding: 4px;
+    width: fit-content;
+    box-shadow: 0 2px 7px rgba(203,30,42,0.09);
 }
-
-.page-title span {
-    color: #CB1E2A;
-}
-
-.tabs button {
-    margin-left: 10px;
-    padding: 8px 16px;
-    border: 1px solid #bfbfbf;
-    background-color: #ffffff;
+.tab-btn {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #7c7c7c;
+    font-size: 16px;
+    font-family: 'Poppins-Semi', Arial, sans-serif;
+    padding: 12px 24px;
+    border-radius: 8px;
     cursor: pointer;
-    border-radius: 5px;
-    transition: background 0.3s;
+    transition: background 0.13s, color 0.13s;
+    font-weight: 500;
+}
+.tab-btn:hover {
+    opacity: 0.5;
+}
+.active-tab {
+    background: #cb1e2a;
+    color: #fff;
+}
+.volunteers-search-container {
+    display: flex;
+    gap: 10px;
+}
+.volunteers-searchbar {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #737373;
+    height: 50px;
+    padding-inline: 12px;
+    width: fit-content;
+}
+.volunteers-search-input {
+    flex: 1;
+    border: none;
+    margin-left: 2%;
+    font-family: 'Poppins-Reg', Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+.volunteers-search-input:focus {
+    outline: none;
+}
+.volunteers-search-icon {
+    width: 18px;
+    height: 18px;
+}
+.volunteers-download-button {
+    display: flex;
+    align-items: center;
+    background-color: #cb1e2a;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    gap: 5px;
+    color: #fff;
+    font-family: 'Poppins-Semi', Arial, sans-serif;
+    cursor: pointer;
+    font-size: 16px;
+}
+.volunteers-download-button:hover {
+    opacity: 0.5;
 }
 
-.tabs button.active-tab {
-    background-color: #CB1E2A;
-    color: white;
+.volunteers-list-view {
+    background: #fff;
+    border-radius: 13px;
+    border: 2px solid #dedede;
+    padding: 0;
+    margin: 24px 0 0;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    /*overflow-x: auto; moved to .volunteers-table-scroll*/
 }
 
-.tabs button:hover {
-    background-color: #CB1E2A;
+.volunteers-table-scroll {
+    overflow-x: auto;
+    max-height: 450px;
+    min-height: 180px;
+}
+
+.volunteers-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 900px;
+}
+.volunteers-table th,
+.volunteers-table td {
+    padding: 13px 12px;
+    font-size: 10px;
+    font-family: 'Poppins-Reg', Arial, sans-serif;
+    border-bottom: 1.5px solid #ececec;
+    vertical-align: middle;
+    text-align: left;
+}
+.volunteers-table th {
+    font-weight: 600;
+    color: #888;
+    background: #f9f9f9;
+    border-bottom: 2.2px solid #dedede;
+    font-size: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.volunteers-table tr:last-child td {
+    border-bottom: none;
 }
 
 .accept-button {
-    background-color: #28a745; /* green */
-    color: white;
+    background: #29b01e;
+    color: #fff;
     border: none;
-    padding: 8px 12px;
-    margin-right: 5px;
-    border-radius: 4px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-family: 'Poppins-Semi', Arial, sans-serif;
+    padding: 7px 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: background 0.18s, transform 0.12s;
+    margin-right: 6px;
 }
-
 .accept-button:hover {
-    background-color: #218838; /* darker green */
+    background: #1d7e16;
+    transform: translateY(-1px);
 }
-
 .deny-button {
-    background-color: #dc3545; /* red */
-    color: white;
+    background: #cb1e2a;
+    color: #fff;
     border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-family: 'Poppins-Semi', Arial, sans-serif;
+    padding: 7px 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: background 0.18s, transform 0.12s;
 }
-
 .deny-button:hover {
-    background-color: #c82333; /* darker red */
+    background: #a31e2a;
+    transform: translateY(-1px);
 }
 
+@media (max-width: 1100px) {
+    .volunteers-table th, .volunteers-table td {
+        font-size: 13px;
+        padding: 8px 5px;
+    }
+    .accept-button, .deny-button {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 700px) {
+    .volunteers-list-view, .volunteers-table {
+        font-size: 11px;
+        padding: 0;
+    }
+}

@@ -1,0 +1,136 @@
+.modal-overlay-admin {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.15);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  
+  .modal-content-admin {
+    background: #fff;
+    padding: 2.5rem 2.7rem 2rem 2.7rem;
+    border-radius: 14px;
+    width: 90vw;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.20);
+    animation: fadeIn 0.3s;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-12px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+  
+  .add-admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+  }
+  
+  .add-admin-header h2 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #222;
+    margin: 0;
+    letter-spacing: -1px;
+  }
+  
+  .add-admin-header .highlight-admin {
+    color: #e74c3c;
+    font-weight: 700;
+  }
+  
+  .close-btn-admin {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #e74c3c;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 10px;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+  .close-btn-admin:hover {
+    color: #c0392b;
+  }
+  
+  .add-admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  
+  .form-row-admin {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+  }
+  
+  .form-group-admin {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-width: 120px;
+  }
+  
+  .form-group-admin label {
+    font-size: 0.98rem;
+    margin-bottom: 0.3rem;
+    color: #222;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+  }
+  
+  .add-admin-form input,
+  .add-admin-form select {
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #dcdcdc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    margin-bottom: 0;
+    background: #fafbfc;
+  }
+  
+  .add-admin-form input:focus,
+  .add-admin-form select:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 5px rgba(74,144,226,0.14);
+    outline: none;
+  }
+  
+  .button-group-admin {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.4rem;
+  }
+  
+  .add-admin-form button[type="submit"] {
+    min-width: 110px;
+    padding: 0.7rem 0;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+    font-weight: 600;
+    background-color: #1dc122;
+    color: white;
+  }
+  
+  .add-admin-form button[type="submit"]:hover {
+    background-color: #13a31a;
+    transform: translateY(-1.5px);
+  }

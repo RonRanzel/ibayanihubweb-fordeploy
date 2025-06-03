@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import { io } from "socket.io-client";
-import searchIcon from "../../Assets/search_icon.png";
+import searchIcon from "../../Assets/searchicon.svg"; 
 import profIcon from "../../Assets/user_icon.png";
-import '../../Styles/sVolunteers.css';  // Link to your CSS file
+import addUserIcon from "../../Assets/addicon.svg";
+import dlIcon from "../../Assets/downloadicon.svg";
+import '../../Styles/sVolunteers.css';
 import { logAuditFrontend } from '../../logAuditFrontend';
 
-const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api"; 
+const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api";
 
 const Volunteers = () => {
     const [activeTab, setActiveTab] = useState('requests');
@@ -46,7 +48,7 @@ const Volunteers = () => {
             .then(res => setVolunteerRequests(res.data))
             .catch(err => console.log("Error fetching volunteer requests:", err));
     };
-    
+
     const fetchAcceptedVolunteers = () => {
         axios.get(`${WEB_API_BASE}/accepted-volunteers`)
             .then(res => setAcceptedVolunteers(res.data))
@@ -96,13 +98,13 @@ const Volunteers = () => {
     const formatTime = (date) => date.toLocaleTimeString("en-US");
 
     const filteredRequests = volunteerRequests.filter(request =>
-        request.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.eventTitleName.toLowerCase().includes(searchTerm.toLowerCase())
+        (request.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (request.eventTitleName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const filteredAccepted = acceptedVolunteers.filter(volunteer =>
-        volunteer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        volunteer.eventTitleName.toLowerCase().includes(searchTerm.toLowerCase())
+        (volunteer.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (volunteer.eventTitleName || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Download volunteers as CSV
@@ -152,139 +154,119 @@ const Volunteers = () => {
     };
 
     return (
-        <div className="volunteers-page">
-            <div id="users-container">
-                <div id="users-header-container">
-                    <div className="header-box date-box">
-                        <p className="date">{formatDate(dateTime)}</p>
-                        <p className="time">{formatTime(dateTime)}</p>
+        <div id="volunteers-container">
+            <div className="volunteers-header">
+                <div className="volunteers-header-left">
+                    <div className="volunteers-date-time-box">
+                        <div className="volunteers-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div className="volunteers-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
                     </div>
-
-                    <div className="header-box search-box">
-                        <input 
-                            type="text" 
-                            placeholder="Search"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <img src={searchIcon} alt="Search" />
-                    </div>
-
-                    <div className="header-box profile-box">
-                        <img src={profIcon} alt="User" className="profile-icon" />
-                        <div className="profile-info">
-                            {loggedInAdmin ? (
-                                <>
-                                    <p className="profile-name">
-                                        {`${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_middleName || ''} ${loggedInAdmin.admin_lastName}`}
-                                    </p>
-                                    <p className="profile-email">{loggedInAdmin.admin_email}</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="profile-name">Loading...</p>
-                                    <p className="profile-email">Fetching admin data</p>
-                                </>
-                            )}
+                </div>
+                <div className="volunteers-title-main">Volunteer Management</div>
+                <div className="volunteers-header-right">
+                    <div className="volunteers-admin-profile">
+                        <img src={profIcon} alt="User" className="volunteers-admin-img" />
+                        <div className="volunteers-admin-details">
+                            <span className="volunteers-admin-name">
+                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
+                            </span>
+                            <span className="volunteers-admin-email">{loggedInAdmin?.admin_email || ''}</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Flex container for Title + Tabs */}
-                <div className="header-row">
-                    <h1 className="page-title">
-                        {activeTab === 'requests' ? (
-                            <>Volunteer <span>Requests</span></>
-                        ) : (
-                            <>Accepted <span>Volunteers</span></>
-                        )}
-                    </h1>
-
-                    <div className="tabs">
-                        <button 
-                            className={activeTab === 'requests' ? 'active-tab' : ''} 
-                            onClick={() => setActiveTab('requests')}
-                        >
-                            Volunteer Requests
-                        </button>
-                        <button 
-                            className={activeTab === 'accepted' ? 'active-tab' : ''} 
-                            onClick={() => setActiveTab('accepted')}
-                        >
-                            Accepted Volunteers
-                        </button>
+            {/* TOP BAR */}
+            <div className="volunteers-top-bar">
+                <div className="volunteers-tabs">
+                    <button className={activeTab === 'requests' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('requests')}> Volunteer Requests</button>
+                    <button className={activeTab === 'accepted' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('accepted')}>Accepted Volunteers</button>
+                </div>
+                <div className="volunteers-search-container">
+                    <div className="volunteers-searchbar">
+                        <img src={searchIcon} alt="Search" className="volunteers-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search by name or event..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="volunteers-search-input"
+                        />
                     </div>
+                    <button className="volunteers-download-button" onClick={handleDownloadVolunteers}>
+                        <img src={dlIcon} alt="Download" />
+                        <span>Download</span>
+                    </button>
                 </div>
+            </div>
 
-                <div className="list-view">
-                    {activeTab === 'requests' && (
-                        <table className="users-table">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>Full Name</th>
-                                    <th>Username</th>
-                                    <th>Event Title</th>
-                                    <th>Event Type</th>
-                                    <th>Date of Birth</th>
-                                    <th>Requested At</th>
-                                    <th>Action</th>
+            <div className="volunteers-list-view">
+                <div className="volunteers-table-scroll">
+                {activeTab === 'requests' && (
+                    <table className="volunteers-table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Full Name</th>
+                                <th>Username</th>
+                                <th>Event Title</th>
+                                <th>Event Type</th>
+                                <th>Date of Birth</th>
+                                <th>Requested At</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredRequests.map((request, index) => (
+                                <tr key={request._id}>
+                                    <td>{String(index + 1).padStart(2, '0')}</td>
+                                    <td>{request.fullName}</td>
+                                    <td>{request.username}</td>
+                                    <td>{request.eventTitleName}</td>
+                                    <td>{request.eventType}</td>
+                                    <td>{formatDate(request.dateOfBirth)}</td>
+                                    <td>{formatDate(request.requestedAt)}</td>
+                                    <td>
+                                        <button className="accept-button" onClick={() => handleAccept(request._id)}>Accept</button>
+                                        <button className="deny-button" onClick={() => handleDeny(request._id)}>Deny</button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {filteredRequests.map((request, index) => (
-                                    <tr key={request._id}>
-                                        <td>{String(index + 1).padStart(2, '0')}</td>
-                                        <td>{request.fullName}</td>
-                                        <td>{request.username}</td>
-                                        <td>{request.eventTitleName}</td>
-                                        <td>{request.eventType}</td>
-                                        <td>{formatDate(request.dateOfBirth)}</td>
-                                        <td>{formatDate(request.requestedAt)}</td>
-                                        <td>
-                                            <button className="accept-button" onClick={() => handleAccept(request._id)}>Accept</button>
-                                            <button className="deny-button" onClick={() => handleDeny(request._id)}>Deny</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-
-                    {activeTab === 'accepted' && (
-                        <table className="users-table">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>Full Name</th>
-                                    <th>Username</th>
-                                    <th>Event Title</th>
-                                    <th>Event Type</th>
-                                    <th>Date of Birth</th>
-                                    <th>Accepted At</th>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+                {activeTab === 'accepted' && (
+                    <table className="volunteers-table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Full Name</th>
+                                <th>Username</th>
+                                <th>Event Title</th>
+                                <th>Event Type</th>
+                                <th>Date of Birth</th>
+                                <th>Accepted At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredAccepted.map((volunteer, index) => (
+                                <tr key={volunteer._id}>
+                                    <td>{String(index + 1).padStart(2, '0')}</td>
+                                    <td>{volunteer.fullName}</td>
+                                    <td>{volunteer.username}</td>
+                                    <td>{volunteer.eventTitleName}</td>
+                                    <td>{volunteer.eventType || 'N/A'}</td>
+                                    <td>{formatDate(volunteer.dateOfBirth)}</td>
+                                    <td>{formatDate(volunteer.acceptedAt)}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {filteredAccepted.map((volunteer, index) => (
-                                    <tr key={volunteer._id}>
-                                        <td>{String(index + 1).padStart(2, '0')}</td>
-                                        <td>{volunteer.fullName}</td>
-                                        <td>{volunteer.username}</td>
-                                        <td>{volunteer.eventTitleName}</td>
-                                        <td>{volunteer.eventType || 'N/A'}</td>
-                                        <td>{formatDate(volunteer.dateOfBirth)}</td>
-                                        <td>{formatDate(volunteer.acceptedAt)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+                            ))}
+                        </tbody>
+                    </table>
+                )}
                 </div>
-
-                <button className="download-button" onClick={handleDownloadVolunteers}>Download</button>
             </div>
         </div>
     );
-}
+};
 
 export default Volunteers;

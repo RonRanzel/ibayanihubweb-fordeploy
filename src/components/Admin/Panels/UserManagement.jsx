@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
 import "../../Styles/sUsers.css";
-import searchIcon from "../../Assets/search_icon.png";
+import searchIcon from "../../Assets/searchicon.svg";
 import profIcon from "../../Assets/user_icon.png";
-import addUserIcon from "../../Assets/adduser.png";
+import addUserIcon from "../../Assets/addicon.svg";
+import dlIcon from "../../Assets/downloadicon.svg";
+import filterIcon from "../../Assets/filtericon.svg";
 import AddUser from "./Modal/AddUser";
-import ViewUserModal from "./Modal/ViewUser"; // ➡️ Import ViewUserModal
+import ViewUserModal from "./Modal/ViewUser";
+import ConfirmAlert from "./Modal/ConfirmAlert";
+import Alert from "./Modal/Alert"; // <-- Import your Alert component
 import { logAuditFrontend } from '../../logAuditFrontend';
 
-const API_BASE = "https://ibayanihubweb-backend.onrender.com"; 
+const API_BASE = "https://ibayanihubweb-backend.onrender.com";
 
 const UserManagement = () => {
     const [dateTime, setDateTime] = useState(new Date());
@@ -17,13 +21,15 @@ const UserManagement = () => {
     const [statusFilter, setStatusFilter] = useState("All");
     const [parishFilter, setParishFilter] = useState("All");
     const [showAddUserModal, setShowAddUserModal] = useState(false);
-    const [showViewUserModal, setShowViewUserModal] = useState(false); // ➡️ NEW
-    const [selectedUser, setSelectedUser] = useState(null); // ➡️ NEW
+    const [showViewUserModal, setShowViewUserModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
     const [loggedInAdmin, setLoggedInAdmin] = useState(null);
     const [activeTab, setActiveTab] = useState('active');
+    const [confirmAlert, setConfirmAlert] = useState({ open: false, type: "warning", message: "", onConfirm: null });
+    const [alertProps, setAlertProps] = useState({ open: false, message: "", type: "success", title: "" }); // <-- Alert state
 
     useEffect(() => {
-        axios.get(`${API_BASE}/api/getUsers`) 
+        axios.get(`${API_BASE}/api/getUsers`)
             .then((response) => setUsers(response.data))
             .catch((error) => {
                 console.log("Error fetching users:", error);
@@ -33,7 +39,7 @@ const UserManagement = () => {
     useEffect(() => {
         const email = localStorage.getItem('adminEmail');
         if (email) {
-            axios.get(`${API_BASE}/api/getAdminByEmail/${email}`) 
+            axios.get(`${API_BASE}/api/getAdminByEmail/${email}`)
                 .then((response) => setLoggedInAdmin(response.data))
                 .catch((error) => {
                     console.log("Error fetching logged-in admin:", error);
@@ -46,19 +52,17 @@ const UserManagement = () => {
         return () => clearInterval(timer);
     }, []);
 
-    const formatDate = (date) => date.toLocaleDateString("en-US", {
+    const formatDate = (date) => date ? new Date(date).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
-    });
-
-    const formatTime = (date) => date.toLocaleTimeString("en-US");
+    }) : "N/A";
 
     const formatBirthdate = (birthdate) => {
         if (!birthdate) return 'MM/DD/YYYY';
         const dateObj = new Date(birthdate);
         if (isNaN(dateObj)) return 'Invalid Date';
-        return dateObj.toLocaleDateString("en-US");
+        return dateObj.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
     };
 
     const parishOptions = [...new Set(users.map(user => user.parish).filter(p => p))];
@@ -83,26 +87,56 @@ const UserManagement = () => {
     const deactivatedUsers = users.filter(user => user.isDeactivated);
 
     const handleUserStatusChange = (userId, deactivate) => {
-        const url = deactivate ? `${API_BASE}/api/deactivate` : `${API_BASE}/api/reactivate`;
-        axios.post(url, { userId })
-            .then(() => {
-                logAuditFrontend({
-                    userId: localStorage.getItem('adminEmail') || 'unknown',
-                    userType: 'admin',
-                    action: deactivate ? 'Deactivate User' : 'Reactivate User',
-                    details: `${deactivate ? 'Deactivated' : 'Reactivated'} user with ID: ${userId}`,
-                    platform: 'web'
-                });
-                axios.get(`${API_BASE}/api/getUsers`).then((response) => setUsers(response.data));
-                setShowViewUserModal(false);
-            })
-            .catch((error) => {
-                let msg = 'Failed to update user status';
-                if (error.response && error.response.data && error.response.data.message) {
-                    msg += `: ${error.response.data.message}`;
-                }
-                alert(msg);
-            });
+        setConfirmAlert({
+            open: true,
+            type: deactivate ? "warning" : "success",
+            title: deactivate ? "Deactivate User" : "Reactivate User",
+            message: deactivate
+                ? "Are you sure you want to deactivate this user? They will lose access to the platform."
+                : "Are you sure you want to reactivate this user? They will regain access to the platform.",
+            confirmText: deactivate ? "Deactivate" : "Reactivate",
+            cancelText: "Cancel",
+            onConfirm: () => {
+                const url = deactivate ? `${API_BASE}/api/deactivate` : `${API_BASE}/api/reactivate`;
+                axios.post(url, { userId })
+                    .then(() => {
+                        logAuditFrontend({
+                            userId: localStorage.getItem('adminEmail') || 'unknown',
+                            userType: 'admin',
+                            action: deactivate ? 'Deactivate User' : 'Reactivate User',
+                            details: `${deactivate ? 'Deactivated' : 'Reactivated'} user with ID: ${userId}`,
+                            platform: 'web'
+                        });
+                        axios.get(`${API_BASE}/api/getUsers`).then((response) => setUsers(response.data));
+                        setShowViewUserModal(false);
+                        setConfirmAlert({ ...confirmAlert, open: false });
+
+                        // CUSTOM ALERT HERE
+                        setAlertProps({
+                            open: true,
+                            message: deactivate ? "Account Deactivated" : "Account Reactivated",
+                            type: "success",
+                            title: "Success"
+                        });
+                    })
+                    .catch((error) => {
+                        let msg = 'Failed to update user status';
+                        if (error.response && error.response.data && error.response.data.message) {
+                            msg += `: ${error.response.data.message}`;
+                        }
+                        setConfirmAlert({
+                            ...confirmAlert,
+                            open: true,
+                            type: "error",
+                            title: "Failed",
+                            message: msg,
+                            confirmText: "OK",
+                            cancelText: "",
+                            onConfirm: () => setConfirmAlert({ ...confirmAlert, open: false }),
+                        });
+                    });
+            }
+        });
     };
 
     // Download users as CSV
@@ -183,196 +217,186 @@ const UserManagement = () => {
         };
     }, []);
 
+    // Auto-close the alert after 3 seconds
+    useEffect(() => {
+        if (alertProps.open) {
+            const timer = setTimeout(() => {
+                setAlertProps(props => ({ ...props, open: false }));
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [alertProps.open]);
+
+    // Columns for Active and Deactivated tabs
+    const activeUserListColumns = [
+        { key: "fullName", label: "Name" },
+        { key: "username", label: "Username" },
+        { key: "mobileNumber", label: "Phone No." },
+        { key: "email", label: "Email" },
+        { key: "dateOfBirth", label: "Birthdate" },
+        { key: "gender", label: "Gender" },
+        { key: "civilStatus", label: "Civil Status" },
+        { key: "address", label: "Address" },
+        { key: "parish", label: "Vicariate/Parish" },
+        { key: "isOnline", label: "Status" },
+        { key: "createdAt", label: "Created At" },
+        { key: "action", label: "Action" },
+    ];
+    const deactivatedUserListColumns = [
+        { key: "fullName", label: "Name" },
+        { key: "username", label: "Username" },
+        { key: "mobileNumber", label: "Phone No." },
+        { key: "email", label: "Email" },
+        { key: "dateOfBirth", label: "Birthdate" },
+        { key: "gender", label: "Gender" },
+        { key: "civilStatus", label: "Civil Status" },
+        { key: "address", label: "Address" },
+        { key: "parish", label: "Vicariate/Parish" },
+        { key: "deactivatedAt", label: "Deactivated At" },
+        { key: "action", label: "Action" },
+    ];
+
+    const renderUserListRow = (user, isDeactivated = false) => {
+        return (
+            <tr key={user._id}>
+                <td>
+                    {`${user.firstName || ''} ${user.middleName ? user.middleName + " " : ""}${user.lastName || ''}`.trim()}
+                </td>
+                <td>{user.username || "N/A"}</td>
+                <td>{user.mobileNumber || user.phoneNumber || "N/A"}</td>
+                <td>{user.email || "N/A"}</td>
+                <td>
+                    {formatBirthdate(user.dateOfBirth)}
+                </td>
+                <td>{user.gender || "N/A"}</td>
+                <td>{user.civilStatus || "N/A"}</td>
+                <td>
+                    {`${user.address || ''}${user.city ? ' ' + user.city : ''}`.trim() || "N/A"}
+                </td>
+                <td>{user.parish || "N/A"}</td>
+                {isDeactivated ? (
+                    <td>
+                        {user.deactivatedAt
+                            ? formatDate(user.deactivatedAt)
+                            : user.updatedAt
+                                ? formatDate(user.updatedAt)
+                                : "N/A"}
+                    </td>
+                ) : (
+                    <>
+                        <td>
+                            <span className={user.isOnline ? "status-label-online" : "status-label-offline"}>
+                                {user.isOnline ? "Online" : "Offline"}
+                            </span>
+                        </td>
+                        <td>
+                            {user.createdAt
+                                ? formatDate(user.createdAt)
+                                : "N/A"}
+                        </td>
+                    </>
+                )}
+                <td>
+                    <button
+                        className="view-btn-list"
+                        onClick={() => {
+                            setSelectedUser(user);
+                            setShowViewUserModal(true);
+                            logAuditFrontend({
+                                userId: localStorage.getItem('adminEmail') || 'unknown',
+                                userType: 'admin',
+                                action: 'View User Profile',
+                                details: `Viewed user profile: ${user.username || ''} (${user.firstName || ''} ${user.lastName || ''})`,
+                                platform: 'web'
+                            });
+                        }}
+                    >
+                        View
+                    </button>
+                </td>
+            </tr>
+        );
+    };
+
     return (
         <div id="users-container">
-            {/* HEADER */}
-            <div id="users-header-container">
-                <div className="header-box date-box">
-                    <p className="date">{formatDate(dateTime)}</p>
-                    <p className="time">{formatTime(dateTime)}</p>
+            <div className="dashb-header">
+                <div className="dashb-header-left">
+                    <div className="dashb-date-time-box">
+                        <div className="dashb-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div className="dashb-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+                    </div>
                 </div>
-
-                <div className="header-box search-box">
-                    <input
-                        type="text"
-                        placeholder="Search by name, username, email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <img src={searchIcon} alt="Search" />
-                </div>
-
-                <div className="header-box profile-box">
-                    <img src={profIcon} alt="User" className="profile-icon" />
-                    <div className="profile-info">
-                        {loggedInAdmin ? (
-                            <>
-                                <p className="profile-name">
-                                    {`${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_middleName || ''} ${loggedInAdmin.admin_lastName}`}
-                                </p>
-                                <p className="profile-email">{loggedInAdmin.admin_email}</p>
-                            </>
-                        ) : (
-                            <>
-                                <p className="profile-name">Loading...</p>
-                                <p className="profile-email">Fetching admin data</p>
-                            </>
-                        )}
+                <div className="dashb-title-main">User Management</div>
+                <div className="dashb-header-right">
+                    <div className="dashb-admin-profile">
+                        <img src={profIcon} alt="User" className="dashb-admin-img" />
+                        <div className="dashb-admin-details">
+                            <span className="dashb-admin-name">
+                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
+                            </span>
+                            <span className="dashb-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* TOP BAR */}
             <div className="users-top-bar">
-                <div className="users-title">
-                    <p className="title">Users</p>
-                    <p className="count">({activeTab === 'active' ? activeUsers.length : deactivatedUsers.length})</p>
+                <div className="users-tabs">
+                    <button className={activeTab === 'active' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('active')}> Active Users</button>
+                    <button className={activeTab === 'deactivated' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('deactivated')}>Deactivated Users</button>
                 </div>
-                <div className="users-filters">
-                    <button className={activeTab === 'active' ? 'active-tab' : ''} onClick={() => setActiveTab('active')}>Active</button>
-                    <button className={activeTab === 'deactivated' ? 'active-tab' : ''} onClick={() => setActiveTab('deactivated')}>Deactivated</button>
-                    <button className="add-user-button" onClick={() => setShowAddUserModal(true)}>
-                        <span>Add User</span>
+                <div className="users-search-container">
+                    <button className="users-add-button" onClick={() => setShowAddUserModal(true)}>
                         <img src={addUserIcon} alt="Add User" />
+                        <span>Add User</span>
                     </button>
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                        <option value="All">Status</option>
-                        <option value="Online">Online</option>
-                        <option value="Offline">Offline</option>
-                    </select>
-                    <select value={parishFilter} onChange={(e) => setParishFilter(e.target.value)}>
-                        <option value="All">Vicariate/Parish</option>
-                        {parishOptions.map((parish, idx) => (
-                            <option key={idx} value={parish}>{parish}</option>
-                        ))}
-                    </select>
-                    <button className="download-button" onClick={handleDownloadUsers}>Download</button>
+                    <div className="users-searchbar">
+                        <img src={searchIcon} alt="Search" className="users-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search by name, username, email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="users-search-input"
+                        />
+                    </div>
+                    <div className="users-filter">
+                        <img src={filterIcon} className="users-filter-icon" />
+                    </div>
+                    <button className="users-download-button" onClick={handleDownloadUsers}>
+                        <img src={dlIcon} alt="----" />
+                        <span>Download</span>
+                    </button>
                 </div>
             </div>
 
-            {/* CONTENT */}
-            <div className="users-content list-view">
-                {activeTab === 'active' ? (
-                    activeUsers.length === 0 ? (
-                        <p>No users found</p>
-                    ) : (
-                        <table className="users-table">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>Username</th>
-                                    <th>Phone No.</th>
-                                    <th>Email</th>
-                                    <th>Full Name</th>
-                                    <th>Birthdate</th>
-                                    <th>Gender</th>
-                                    <th>Address</th>
-                                    <th>Vicariate/Parish</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {activeUsers.map((user, index) => (
-                                    <tr key={user._id}>
-                                        <td>{String(index + 1).padStart(2, '0')}</td>
-                                        <td>{user.username || 'N/A'}</td>
-                                        <td>{user.mobileNumber || user.phoneNumber}</td>
-                                        <td>{user.email || 'N/A'}</td>
-                                        <td>{`${user.firstName || ''} ${user.middleName || ''} ${user.lastName || ''}`}</td>
-                                        <td>{formatBirthdate(user.dateOfBirth)}</td>
-                                        <td>{user.gender || 'N/A'}</td>
-                                        <td>{user.address || 'N/A'} {user.city || 'N/A'}</td>
-                                        <td>{user.parish || 'N/A'}</td>
-                                        <td>
-                                            <span className={user.isOnline ? "status-online" : "status-offline"}>
-                                                {user.isOnline ? "Online" : "Offline"}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button 
-                                                className="view-button"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowViewUserModal(true);
-                                                    logAuditFrontend({
-                                                        userId: localStorage.getItem('adminEmail') || 'unknown',
-                                                        userType: 'admin',
-                                                        action: 'View User Profile',
-                                                        details: `Viewed user profile: ${user.username || ''} (${user.firstName || ''} ${user.lastName || ''})`,
-                                                        platform: 'web'
-                                                    });
-                                                }}
-                                            >
-                                                View
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )
-                ) : (
-                    deactivatedUsers.length === 0 ? (
-                        <p>No deactivated users</p>
-                    ) : (
-                        <table className="users-table">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>Username</th>
-                                    <th>Phone No.</th>
-                                    <th>Email</th>
-                                    <th>Full Name</th>
-                                    <th>Birthdate</th>
-                                    <th>Gender</th>
-                                    <th>Address</th>
-                                    <th>Vicariate/Parish</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {deactivatedUsers.map((user, index) => (
-                                    <tr key={user._id}>
-                                        <td>{String(index + 1).padStart(2, '0')}</td>
-                                        <td>{user.username || 'N/A'}</td>
-                                        <td>{user.mobileNumber || user.phoneNumber}</td>
-                                        <td>{user.email || 'N/A'}</td>
-                                        <td>{`${user.firstName || ''} ${user.middleName || ''} ${user.lastName || ''}`}</td>
-                                        <td>{formatBirthdate(user.dateOfBirth)}</td>
-                                        <td>{user.gender || 'N/A'}</td>
-                                        <td>{user.address || 'N/A'} {user.city || 'N/A'}</td>
-                                        <td>{user.parish || 'N/A'}</td>
-                                        <td>
-                                            <span className={user.isOnline ? "status-online" : "status-offline"}>
-                                                {user.isOnline ? "Online" : "Offline"}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button 
-                                                className="view-button"
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowViewUserModal(true);
-                                                    logAuditFrontend({
-                                                        userId: localStorage.getItem('adminEmail') || 'unknown',
-                                                        userType: 'admin',
-                                                        action: 'View User Profile',
-                                                        details: `Viewed user profile: ${user.username || ''} (${user.firstName || ''} ${user.lastName || ''})`,
-                                                        platform: 'web'
-                                                    });
-                                                }}
-                                            >
-                                                View
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )
-                )}
+            {/* USER LIST VIEW --- Active and Deactivated */}
+            <div className="users-content users-list-view">
+                <table className="user-list-table">
+                    <thead>
+                        <tr>
+                            {(activeTab === 'active' ? activeUserListColumns : deactivatedUserListColumns).map(col => (
+                                <th key={col.key}>{col.label}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {(activeTab === 'active' ? activeUsers : deactivatedUsers).length === 0 ? (
+                            <tr>
+                                <td colSpan={(activeTab === 'active' ? activeUserListColumns.length : deactivatedUserListColumns.length)} style={{ textAlign: 'center', fontWeight: 500 }}>
+                                    No users found
+                                </td>
+                            </tr>
+                        ) : (
+                            (activeTab === 'active'
+                                ? activeUsers.map(user => renderUserListRow(user, false))
+                                : deactivatedUsers.map(user => renderUserListRow(user, true))
+                            )
+                        )}
+                    </tbody>
+                </table>
             </div>
 
             {/* Add User Modal */}
@@ -389,10 +413,34 @@ const UserManagement = () => {
             {showViewUserModal && selectedUser && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <button className="close-button" onClick={() => setShowViewUserModal(false)}>X</button>
                         <ViewUserModal user={selectedUser} onClose={() => setShowViewUserModal(false)} onStatusChange={handleUserStatusChange} />
                     </div>
                 </div>
+            )}
+
+            {/* Confirm Alert */}
+            <ConfirmAlert
+                open={confirmAlert.open}
+                title={confirmAlert.title}
+                message={confirmAlert.message}
+                type={confirmAlert.type}
+                confirmText={confirmAlert.confirmText}
+                cancelText={confirmAlert.cancelText}
+                onConfirm={() => {
+                    if (confirmAlert.onConfirm) confirmAlert.onConfirm();
+                }}
+                onCancel={() => setConfirmAlert({ ...confirmAlert, open: false })}
+            />
+
+            {/* Modern Success/Error Alert */}
+            {alertProps.open && (
+                <Alert
+                    message={alertProps.message}
+                    type={alertProps.type}
+                    title={alertProps.title}
+                    duration={3000}
+                    onClose={() => setAlertProps({ ...alertProps, open: false })}
+                />
             )}
         </div>
     );

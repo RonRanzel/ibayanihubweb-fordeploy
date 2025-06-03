@@ -1,0 +1,104 @@
+.modern-alert {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px 0 rgba(0,0,0,0.12);
+    min-width: 330px;
+    max-width: 480px;
+    margin: 0 auto;
+    margin-top: 36px;
+    padding: 0;
+    border: none;
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+  }
+  
+  .modern-alert-leftbar {
+    width: 5px;
+    border-radius: 10px 0 0 10px;
+    background: linear-gradient(180deg, #38d97a 60%, #2a7751 100%);
+    margin-right: 20px;
+    min-height: 80px;
+    align-self: stretch;
+  }
+  .modern-alert.error .modern-alert-leftbar {
+    background: linear-gradient(180deg, #ff3c3c 60%, #ce2121 100%);
+  }
+  .modern-alert.warning .modern-alert-leftbar {
+    background: linear-gradient(180deg, #ffd600 60%, #a89700 100%);
+  }
+  
+  .modern-alert-content {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px 32px 18px 0;
+    min-width: 0;
+  }
+  
+  .modern-alert-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2px;
+  }
+  
+  .modern-alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    width: 28px;
+    margin-right: 2px;
+  }
+  
+  .modern-alert-title {
+    font-size: 18px;
+    font-family: 'Poppins-Semi', Arial, Helvetica, sans-serif;
+    color: #000;
+    margin-right: 12px;
+  }
+  
+  .modern-alert-message {
+    color: #000;
+    font-family: 'Poppins-Reg', Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    margin-bottom: 10px;
+    margin-top: 2px;
+  }
+  
+  .modern-alert-subtext {
+    color: #bdbdbd;
+    font-family: 'Poppins-Reg', Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    margin-top: 3px;
+  }
+  
+  @media (max-width: 600px) {
+    .modern-alert {
+      min-width: 0;
+      max-width: 98vw;
+      width: 98vw;
+      left: 1vw;
+      transform: none;
+      padding: 0;
+    }
+    .modern-alert-content {
+      padding: 10px 10px 10px 0;
+    }
+    .modern-alert-header .modern-alert-title {
+      font-size: 15px;
+    }
+    .modern-alert-message {
+      font-size: 14px;
+    }
+    .modern-alert-subtext {
+      font-size: 13px;
+    }
+  }

@@ -1,19 +1,41 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
-import { io } from "socket.io-client";
-import searchIcon from "../../Assets/search_icon.png";
 import profIcon from "../../Assets/user_icon.png";
-import usersIcon from "../../Assets/dashboard/dbusers-icon.svg";
-import adminsIcon from "../../Assets/dashboard/dbadmins-icon.svg";
-import badgeIcon from "../../Assets/badge_icon.png";
-import handIcon from "../../Assets/f7_hand-raised.png";
-import gridIcon from "../../Assets/grid1_icon.png";
+import accountsIcon from "../../Assets/usericon.svg";
+import eventIcon from "../../Assets/eventicon.svg";
+import communityIcon from "../../Assets/communityicon.svg";
+import volunteerIcon from "../../Assets/volunteericon.svg";
+import donationIcon from "../../Assets/donationicon.svg";
+import announcementIcon from "../../Assets/communityicon.svg";
 import "../../Styles/sDashboard.css";
 import { logAuditFrontend } from '../../logAuditFrontend';
 
-// Use the correct backend API base (no dash)
+// Utility for calendar
+function getMonthMatrix(year, month) {
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const matrix = [];
+    let current = new Date(year, month, 1);
+    let row = [];
+    for (let i = 0; i < firstDay.getDay(); i++) row.push(null);
+    while (current <= lastDay) {
+        row.push(new Date(current));
+        if (row.length === 7) {
+            matrix.push(row);
+            row = [];
+        }
+        current.setDate(current.getDate() + 1);
+    }
+    if (row.length) {
+        while (row.length < 7) row.push(null);
+        matrix.push(row);
+    }
+    return matrix;
+}
+
 const API_BASE = "https://ibayanihubweb-backend.onrender.com";
 const MOBILE_API_BASE = "https://ibayanihub-backend.onrender.com";
+const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api";
 
 const Dashboard = ({ setActiveSection }) => {
     const [dateTime, setDateTime] = useState(new Date());
@@ -25,157 +47,33 @@ const Dashboard = ({ setActiveSection }) => {
     const [communityPosts, setCommunityPosts] = useState([]);
     const [announcements, setAnnouncements] = useState([]);
     const [events, setEvents] = useState([]);
-    // Socket reference
-    const [socket, setSocket] = useState(null);
+    const [donations, setDonations] = useState([]);
+    const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+    const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
 
     useEffect(() => {
-        axios.get(`${API_BASE}/api/getUsers`)
-            .then((response) => {
-                console.log('Fetched users:', response.data);
-                setUsers(response.data);
-            })
-            .catch((error) => console.log("Error fetching users:", error));
+        axios.get(`${API_BASE}/api/getUsers`).then(res => setUsers(res.data));
+        axios.get(`${API_BASE}/api/getAdmin`).then(res => setAdmins(res.data));
+        axios.get(`${API_BASE}/api/volunteer-requests`).then(res => setVolunteerRequests(res.data));
+        axios.get(`${WEB_API_BASE}/accepted-volunteers`).then(res => setAcceptedVolunteers(res.data));
+        axios.get(`${MOBILE_API_BASE}/api/posts`).then(res => setCommunityPosts(res.data));
+        axios.get(`${API_BASE}/api/events`).then(res => setEvents(res.data));
+        axios.get(`${MOBILE_API_BASE}/api/announcements`).then(res => setAnnouncements(res.data));
+        fetch('https://ibayanihub-backend.onrender.com/api/donations')
+            .then(res => res.json())
+            .then(data => setDonations(data))
+            .catch(() => {});
     }, []);
-
-    useEffect(() => {
-        axios.get(`${API_BASE}/api/getAdmin`)
-            .then((response) => {
-                console.log('Fetched admins:', response.data);
-                setAdmins(response.data);
-            })
-            .catch((error) => console.log("Error fetching admins:", error));
-    }, []);
-
     useEffect(() => {
         const email = localStorage.getItem('adminEmail');
         if (email) {
-            axios.get(`${API_BASE}/api/getAdminByEmail/${email}`)
-                .then((response) => {
-                    console.log('Fetched logged-in admin:', response.data);
-                    setLoggedInAdmin(response.data);
-                })
-                .catch((error) => console.log("Error fetching logged-in admin:", error));
+            axios.get(`${API_BASE}/api/getAdminByEmail/${email}`).then(res => setLoggedInAdmin(res.data));
         }
     }, []);
-
-    useEffect(() => {
-        axios.get(`${API_BASE}/api/volunteer-requests`)
-            .then((response) => setVolunteerRequests(response.data))
-            .catch((error) => console.log("Error fetching volunteer requests:", error));
-
-        axios.get(`${API_BASE}/api/accepted-volunteers`)
-            .then((response) => setAcceptedVolunteers(response.data))
-            .catch((error) => console.log("Error fetching accepted volunteers:", error));
-    }, []);
-
-    useEffect(() => {
-        // Fetch community posts from mobile backend
-        axios.get(`${MOBILE_API_BASE}/api/posts`)
-            .then((response) => setCommunityPosts(response.data))
-            .catch((error) => console.log("Error fetching community posts:", error));
-        axios.get(`${API_BASE}/api/events`)
-            .then((response) => setEvents(response.data))
-            .catch((error) => console.log("Error fetching events:", error));
-        // Fetch announcements from mobile backend
-        axios.get(`${MOBILE_API_BASE}/api/announcements`)
-            .then((response) => setAnnouncements(response.data))
-            .catch((error) => console.log("Error fetching announcements:", error));
-    }, []);
-
     useEffect(() => {
         const timer = setInterval(() => setDateTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
-
-    const formatDate = (date) => date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-    });
-
-    const formatTime = (date) => date.toLocaleTimeString("en-US");
-
-    // Helper for correct singular/plural (plural if 2 or more) without number
-    const pluralizeTitle = (count, singular, plural) => {
-        return count >= 2 ? plural : singular;
-    };
-
-    // Filter event types
-    const volunteerEventsCount = events.filter(ev => ev.eventType === 'Volunteer').length;
-    const donationEventsCount = events.filter(ev => ev.eventType === 'Donation').length;
-
-    // Find latest announcement (by createdAt)
-    const latestAnnouncement = announcements.length > 0 ? announcements.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b) : null;
-    // Find latest community post (by createdAt)
-    const latestCommunityPost = communityPosts.length > 0 ? communityPosts.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b) : null;
-
-    // Example: hardcoded for now, replace with real data if available
-    const pendingRequests = [
-        { event: 'Damayan Volunteerism Act', date: '01/01/2025', pending: 'DONE' },
-        { event: 'Segunda Mana Packers', date: '01/07/2025', pending: '3 Requests' },
-        { event: 'Segunda Mana Packers', date: '02/26/2025', pending: '4 Requests' },
-    ];
-    const monitoringVolunteers = [
-        { event: 'Damayan Volunteerism Act', attended: '10 Attended', absent: '2 Absents' },
-        { event: 'Segunda Mana Packers', attended: 'PENDING', absent: 'PENDING' },
-        { event: 'Segunda Mana Packers', attended: 'PENDING', absent: 'PENDING' },
-    ];
-
-    // --- SOCKET.IO REAL-TIME UPDATES ---
-    useEffect(() => {
-        // Initialize socket connection
-        const newSocket = io(API_BASE);
-        setSocket(newSocket);
-
-        // Listen for real-time updates
-        newSocket.on('users_updated', (data) => setUsers(data));
-        newSocket.on('admins_updated', (data) => setAdmins(data));
-        newSocket.on('community_posts_updated', (data) => setCommunityPosts(data));
-        newSocket.on('announcements_updated', (data) => setAnnouncements(data));
-        newSocket.on('events_updated', (data) => setEvents(data));
-
-        return () => {
-            newSocket.disconnect();
-        };
-    }, []);
-
-    // --- USERS THIS WEEK LOGIC ---
-    // Get start of current week (Monday)
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay() + 1); // Monday as start
-    startOfWeek.setHours(0, 0, 0, 0);
-    // Count users created this week
-    const usersThisWeek = users.filter(u => u.createdAt && new Date(u.createdAt) >= startOfWeek).length;
-
-    // --- COMMUNITY POSTS THIS WEEK LOGIC ---
-    const communityPostsThisWeek = communityPosts.filter(p => p.createdAt && new Date(p.createdAt) >= startOfWeek).length;
-
-    // --- EVENTS THIS WEEK LOGIC ---
-    const volunteerEventsThisWeek = events.filter(ev => ev.eventType === 'Volunteer' && ev.createdAt && new Date(ev.createdAt) >= startOfWeek).length;
-    const donationEventsThisWeek = events.filter(ev => ev.eventType === 'Donation' && ev.createdAt && new Date(ev.createdAt) >= startOfWeek).length;
-
-    // --- VOLUNTEER REQUESTS TABLE LOGIC ---
-    // Group pending volunteer requests by event, and get event type from events list
-    const pendingRequestsByEvent = volunteerRequests.reduce((acc, req) => {
-        if (!req.eventId || !req.eventTitleName) return acc;
-        const key = req.eventId;
-        // Find event in events array to get eventType and eventDate
-        const eventObj = events.find(ev => (ev._id === req.eventId || ev.id === req.eventId));
-        if (!acc[key]) {
-            acc[key] = {
-                eventId: req.eventId,
-                eventTitle: req.eventTitleName,
-                eventType: eventObj ? eventObj.eventType : '',
-                eventDate: eventObj ? eventObj.eventDate : '',
-                pendingCount: 0
-            };
-        }
-        acc[key].pendingCount += 1;
-        return acc;
-    }, {});
-    const pendingRequestsRows = Object.values(pendingRequestsByEvent);
-
     useEffect(() => {
         logAuditFrontend({
             userId: localStorage.getItem('adminEmail') || 'unknown',
@@ -186,170 +84,283 @@ const Dashboard = ({ setActiveSection }) => {
         });
     }, []);
 
+    // Stats
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay() + 1);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const usersThisWeek = users.filter(u => u.createdAt && new Date(u.createdAt) >= startOfWeek).length;
+    const communityPostsThisWeek = communityPosts.filter(p => p.createdAt && new Date(p.createdAt) >= startOfWeek).length;
+    const volunteerEventsThisWeek = events.filter(ev => ev.eventType === 'Volunteer' && ev.createdAt && new Date(ev.createdAt) >= startOfWeek).length;
+    const donationEventsThisWeek = events.filter(ev => ev.eventType === 'Donation' && ev.createdAt && new Date(ev.createdAt) >= startOfWeek).length;
+    const volunteerEventsCount = events.filter(ev => ev.eventType === 'Volunteer').length;
+    const donationEventsCount = events.filter(ev => ev.eventType === 'Donation').length;
+    const pendingRequestsCount = volunteerRequests.length;
+    const acceptedVolunteersCount = acceptedVolunteers.length;
+    const pendingDonationsCount = donations.filter(d => d.status === 'pending').length;
+    const approvedDonationsCount = donations.filter(d => d.status === 'accepted').length;
+
+    const latestAnnouncement = announcements.length > 0
+        ? announcements.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b)
+        : null;
+
+    const eventsByDate = {};
+    events.forEach(ev => {
+        if (ev.eventDate) {
+            const day = new Date(ev.eventDate);
+            const key = day.toISOString().slice(0, 10);
+            if (!eventsByDate[key]) eventsByDate[key] = [];
+            eventsByDate[key].push(ev);
+        }
+    });
+
+    const monthMatrix = getMonthMatrix(calendarYear, calendarMonth);
+    const monthName = new Date(calendarYear, calendarMonth, 1).toLocaleString('default', { month: 'long' });
+
+    function changeMonth(offset) {
+        let m = calendarMonth + offset;
+        let y = calendarYear;
+        if (m < 0) { m = 11; y--; }
+        if (m > 11) { m = 0; y++; }
+        setCalendarMonth(m);
+        setCalendarYear(y);
+    }
+
+    // Card click handlers
+    const handleCardClick = (section) => {
+        if (setActiveSection) setActiveSection(section);
+    };
+
+    // Card grid for a modern dashboard
     return (
-        <div style={{ padding: 24 }}>
-            {/* Dashboard Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ background: '#fff', borderRadius: 8, padding: '8px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', textAlign: 'center' }}>
-                        <div style={{ color: '#F44336', fontWeight: 700, fontSize: 16 }}>
-                            {dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                        </div>
-                        <div style={{ color: '#222', fontWeight: 500, fontSize: 15 }}>
-                            {dateTime.toLocaleTimeString('en-US', { hour12: true })}
-                        </div>
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 28, background: '#fff', borderRadius: 8, padding: '8px 32px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                        Dashboard
+        <div className="dashboard-main">
+            {/* Header - do not change! */}
+            <div className="dashb-header">
+                <div className="dashb-header-left">
+                    <div className="dashb-date-time-box">
+                        <div className="dashb-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div className="dashb-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
                     </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ background: '#fff', borderRadius: 8, padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                        <img src={profIcon} alt="User" style={{ width: 36, height: 36, borderRadius: '50%', background: '#eee', marginRight: 8 }} />
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <span style={{ fontWeight: 700, color: '#F44336', fontSize: 16 }}>
+                <div className="dashb-title-main">Dashboard</div>
+                <div className="dashb-header-right">
+                    <div className="dashb-admin-profile">
+                        <img src={profIcon} alt="User" className="dashb-admin-img" />
+                        <div className="dashb-admin-details">
+                            <span className="dashb-admin-name">
                                 {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
                             </span>
-                            <span style={{ fontSize: 13, color: '#222' }}>{loggedInAdmin?.admin_email || ''}</span>
+                            <span className="dashb-admin-email">{loggedInAdmin?.admin_email || ''}</span>
                         </div>
                     </div>
                 </div>
             </div>
-            {/* Welcome Head Admin */}
-            <div style={{ marginBottom: 16, fontSize: 18, fontWeight: 500 }}>
-                Welcome,<br />
-                <span style={{ color: '#F44336', fontWeight: 700, fontSize: 20 }}>
-                    HEAD ADMIN {loggedInAdmin ? `${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_lastName}` : ''}
-                </span>
+            {/* Welcome - do not change! */}
+            <div className="dashb-content-header">
+                <div className="dashb-welcome">
+                    Welcome,<br />
+                    <span className="dashb-welcome-highlight">
+                        HEAD ADMIN {loggedInAdmin ? `${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_lastName}` : ''}
+                    </span>
+                </div>
             </div>
-            {/* Search Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-                <input
-                    type="text"
-                    placeholder="Search"
-                    style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #ddd', width: 220, marginRight: 8 }}
-                />
-                <button style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 8 }}>
-                    <img src={searchIcon} alt="Search" style={{ width: 18, height: 18 }} />
-                </button>
-            </div>
-            <div style={{ display: 'flex', gap: 24 }}>
-                {/* Accounts */}
-                <div style={{ flex: 1 }}>
-                    <div className="db-card">
-                        <h3>Accounts</h3>
-                        <div className="db-row">
-                            <div>
-                                <div className="db-label">Total of Users</div>
-                                <div className="db-value">{users.length}</div>
-                                <div className="db-trend up">+{usersThisWeek} User{usersThisWeek === 1 ? '' : 's'} this week</div>
-                            </div>
-                            <div>
-                                <div className="db-label">Total of Admins</div>
-                                <div className="db-value">{admins.length}</div>
-                                {/* Removed admin trend line */}
-                            </div>
+
+            {/* Cards grid */}
+            <div className="dashboard-cardgrid">
+                <div className="dashboard-cards-row">
+                    {/* User/Account Card */}
+                    <div
+                        className="dashboard-card modern-card accounts-card clickable"
+                        onClick={() => handleCardClick("userM")}
+                        style={{ cursor: "pointer" }}
+                        title="Go to User Accounts"
+                    >
+                        <div className="modern-card-icon-box">
+                            <img src={accountsIcon} alt="Accounts" />
+                        </div>
+                        <div className="modern-card-title">User Accounts</div>
+                        <div className="modern-card-stat">{users.length}</div>
+                        <div className="modern-card-substat">Admins: <span>{admins.length}</span></div>
+                        <div className="modern-card-footer">
+                            <span>New this week: {usersThisWeek}</span>
                         </div>
                     </div>
-                    <div className="db-card" style={{ marginTop: 24 }}>
-                        <h3>Community Management</h3>
-                        <div className="db-row">
-                            <div>
-                                <div className="db-label">Total of Community Posting</div>
-                                <div className="db-value">{communityPosts.length}</div>
-                                <div className="db-trend up">+{communityPostsThisWeek} Posting{communityPostsThisWeek === 1 ? '' : 's'} this week</div>
-                            </div>
+                    {/* Admin Accounts Card */}
+                    <div
+                        className="dashboard-card modern-card admins-card clickable"
+                        onClick={() => handleCardClick("adminM")}
+                        style={{ cursor: "pointer" }}
+                        title="Go to Admin Accounts"
+                    >
+                        <div className="modern-card-icon-box">
+                            <img src={profIcon} alt="Admins" />
                         </div>
-                        <div className="db-latest-announcement">
-                            <div className="db-label">Latest Announcement</div>
-                            {latestAnnouncement ? (
-                                <div className="db-announcement-content" style={{ flexDirection: 'column', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', padding: 16, marginTop: 8 }}>
-                                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 2 }}>{latestAnnouncement.title}</div>
-                                    <div style={{ fontSize: 13, color: '#555', marginBottom: 8 }}>{latestAnnouncement.content}</div>
-                                    {latestAnnouncement.media && (
-                                        <img src={latestAnnouncement.media} alt="Announcement" style={{ width: '100%', maxWidth: 300, maxHeight: 120, objectFit: 'cover', borderRadius: 8, margin: '0 auto 8px auto', display: 'block' }} />
-                                    )}
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#888', marginTop: 4 }}>
-                                        <div>
-                                            <span style={{ color: '#F44336', marginRight: 4 }}>&#10084;</span>
-                                            {latestAnnouncement.likes?.length || 0} Comments
-                                        </div>
-                                        <div>Posted {Math.floor((Date.now() - new Date(latestAnnouncement.createdAt)) / (1000 * 60 * 60))} hours ago</div>
-                                    </div>
+                        <div className="modern-card-title">Admin Accounts</div>
+                        <div className="modern-card-stat">{admins.length}</div>
+                        <div className="modern-card-footer">
+                            <span>Manage admins</span>
+                        </div>
+                    </div>
+                    {/* Community Card */}
+                    <div
+                        className="dashboard-card modern-card community-card clickable"
+                        onClick={() => handleCardClick("community")}
+                        style={{ cursor: "pointer" }}
+                        title="Go to Community"
+                    >
+                        <div className="modern-card-icon-box community">
+                            <img src={communityIcon} alt="Community" />
+                        </div>
+                        <div className="modern-card-title">Community</div>
+                        <div className="modern-card-stat">{communityPosts.length}</div>
+                        <div className="modern-card-substat">Posts this week: <span>{communityPostsThisWeek}</span></div>
+                        <div className="modern-card-footer">
+                            <span>Announcements: {announcements.length}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="dashboard-cards-row">
+                    {/* Volunteer Card */}
+                    <div
+                        className="dashboard-card modern-card volunteer-card clickable"
+                        onClick={() => handleCardClick("volunteers")}
+                        style={{ cursor: "pointer" }}
+                        title="Go to Volunteers"
+                    >
+                        <div className="modern-card-icon-box volunteer">
+                            <img src={volunteerIcon} alt="Volunteer" />
+                        </div>
+                        <div className="modern-card-title">Volunteers</div>
+                        <div className="modern-card-stat">{acceptedVolunteersCount}</div>
+                        <div className="modern-card-substat">Pending: <span>{pendingRequestsCount}</span></div>
+                        <div className="modern-card-footer">
+                            <span>Events: {volunteerEventsCount}</span>
+                        </div>
+                    </div>
+                    {/* Donations Card */}
+                    <div
+                        className="dashboard-card modern-card donation-card clickable"
+                        onClick={() => handleCardClick("donations")}
+                        style={{ cursor: "pointer" }}
+                        title="Go to Donations"
+                    >
+                        <div className="modern-card-icon-box donation">
+                            <img src={donationIcon} alt="Donations" />
+                        </div>
+                        <div className="modern-card-title">Donations</div>
+                        <div className="modern-card-stat">{approvedDonationsCount}</div>
+                        <div className="modern-card-substat">Pending: <span>{pendingDonationsCount}</span></div>
+                        <div className="modern-card-footer">
+                            <span>Donation Events: {donationEventsCount}</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Event & Calendar Card */}
+                <div className="dashboard-cards-row">
+                    <div
+                        className="dashboard-card modern-card wide event-card clickable"
+                        onClick={() => handleCardClick("Mposting")}
+                        style={{ cursor: "pointer" }}
+                        title="Go to Events"
+                    >
+                        <div className="modern-card-header-flex">
+                            <div className="modern-card-icon-box event">
+                                <img src={eventIcon} alt="Event" />
+                            </div>
+                            <span className="modern-card-title event">Event Management</span>
+                        </div>
+                        <div className="modern-card-flex-content">
+                            <div className="event-stat-stack">
+                                <div>
+                                    <div className="modern-card-stat">{events.length}</div>
+                                    <div className="modern-card-substat">Events this week: <span>{volunteerEventsThisWeek + donationEventsThisWeek}</span></div>
                                 </div>
-                            ) : (
-                                <span>No Announcements</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                {/* Volunteer Management */}
-                <div style={{ flex: 2 }}>
-                    <div className="db-card">
-                        <h3>Volunteer Management</h3>
-                        <div className="db-row">
-                            <div style={{ flex: 1 }}>
-                                <div className="db-label">Pending Requests for Event</div>
-                                <div className="db-value">{pendingRequestsRows.reduce((sum, r) => sum + r.pendingCount, 0)}</div>
-                                <table className="db-table">
-                                    <thead>
-                                        <tr><th>Event Title</th><th>Event Type</th><th>Event Date</th><th>Pending No. of Request</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        {pendingRequestsRows.length === 0 ? (
-                                            <tr><td colSpan="4">No pending requests</td></tr>
-                                        ) : (
-                                            pendingRequestsRows.map((r, i) => (
-                                                <tr key={i}>
-                                                    <td>{r.eventTitle}</td>
-                                                    <td>{r.eventType}</td>
-                                                    <td>{r.eventDate ? new Date(r.eventDate).toLocaleDateString() : ''}</td>
-                                                    <td>{r.pendingCount}</td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                                <div className="db-pagination"><span>Page 1</span> <button>Back</button> <button>Next</button></div>
+                                <div className="event-stat-row">
+                                    <span className="event-badge volunteer">Volunteer: {volunteerEventsCount}</span>
+                                    <span className="event-badge donation">Donation: {donationEventsCount}</span>
+                                </div>
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <div className="db-label">Monitoring Volunteers for Event</div>
-                                <div className="db-value">12</div>
-                                <table className="db-table">
+                            <div className="modern-calendar-wrap">
+                                <div className="modern-calendar-header">
+                                    <button onClick={e => { e.stopPropagation(); changeMonth(-1) }}>&lt;</button>
+                                    <span>{monthName} {calendarYear}</span>
+                                    <button onClick={e => { e.stopPropagation(); changeMonth(1) }}>&gt;</button>
+                                </div>
+                                <table className="modern-calendar-table">
                                     <thead>
-                                        <tr><th>Event Title</th><th>Attended</th><th>Absent</th></tr>
+                                        <tr>
+                                            <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th>
+                                            <th>Thu</th><th>Fri</th><th>Sat</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                        {monitoringVolunteers.map((r, i) => (
-                                            <tr key={i}><td>{r.event}</td><td>{r.attended}</td><td>{r.absent}</td></tr>
+                                        {monthMatrix.map((week, i) => (
+                                            <tr key={i}>
+                                                {week.map((date, j) => {
+                                                    const key = date ? date.toISOString().slice(0, 10) : '';
+                                                    return (
+                                                        <td key={j} className={date ? "" : "modern-calendar-empty"}>
+                                                            {date && (
+                                                                <div className="modern-calendar-day-cell">
+                                                                    <span className="modern-calendar-date">{date.getDate()}</span>
+                                                                    {eventsByDate[key] && eventsByDate[key].map(ev => (
+                                                                        <div key={ev._id || ev.eventTitleName}
+                                                                            className="modern-calendar-event"
+                                                                            title={ev.eventTitleName}
+                                                                        >
+                                                                            {ev.eventPicture &&
+                                                                                <img
+                                                                                    src={ev.eventPicture}
+                                                                                    alt={ev.eventTitleName}
+                                                                                    className="modern-calendar-event-img"
+                                                                                />
+                                                                            }
+                                                                            <span className="modern-calendar-event-title">{ev.eventTitleName}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    );
+                                                })}
+                                            </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                                <div className="db-pagination"><span>Page 1</span> <button>Back</button> <button>Next</button></div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            {/* Events & Donation Management */}
-            <div style={{ display: 'flex', gap: 24, marginTop: 24 }}>
-                <div className="db-card" style={{ flex: 1 }}>
-                    <h3>Events Management</h3>
-                    <div className="db-label">Total of Volunteer Events</div>
-                    <div className="db-value">{volunteerEventsCount}</div>
-                    <div className="db-trend up">+{volunteerEventsThisWeek} Posting{volunteerEventsThisWeek === 1 ? '' : 's'} this week</div>
-                    <div className="db-label" style={{ marginTop: 16 }}>Total of Donation Events</div>
-                    <div className="db-value">{donationEventsCount}</div>
-                    <div className="db-trend up">+{donationEventsThisWeek} Posting{donationEventsThisWeek === 1 ? '' : 's'} this week</div>
-                </div>
-                <div className="db-card" style={{ flex: 1 }}>
-                    <h3>Donation Management</h3>
-                    <div className="db-label">Total of Pending Transactions</div>
-                    <div className="db-value">12</div>
-                    <div className="db-trend up">+4 Pending this week</div>
-                    <div className="db-label" style={{ marginTop: 16 }}>Total of Approved Transactions</div>
-                    <div className="db-value">7</div>
-                    <div className="db-trend up">+4 Approved this week</div>
+                    <div
+                        className="dashboard-card modern-card announcement-card clickable"
+                        onClick={() => handleCardClick("announcements")}
+                        style={{ cursor: "pointer" }}
+                        title="Go to Announcements"
+                    >
+                        <div className="modern-card-header-flex">
+                            <div className="modern-card-icon-box announcement">
+                                <img src={announcementIcon} alt="Announcement" />
+                            </div>
+                            <span className="modern-card-title announcement">Latest Announcement</span>
+                        </div>
+                        <div className="modern-announcement-content">
+                            {latestAnnouncement ? (
+                                <>
+                                    <div className="modern-announcement-title">{latestAnnouncement.title}</div>
+                                    <div className="modern-announcement-desc">{latestAnnouncement.content}</div>
+                                    {latestAnnouncement.media && (
+                                        <img src={latestAnnouncement.media} alt="Announcement" className="modern-announcement-img" />
+                                    )}
+                                    <div className="modern-announcement-meta">
+                                        <span className="modern-announcement-likes">&#10084; {latestAnnouncement.likes?.length || 0} Comments</span>
+                                        <span>Posted {Math.floor((Date.now() - new Date(latestAnnouncement.createdAt)) / (1000 * 60 * 60))} hours ago</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <span className="modern-announcement-none">No Announcements</span>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

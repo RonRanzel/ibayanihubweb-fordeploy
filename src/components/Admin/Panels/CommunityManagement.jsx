@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
-import searchIcon from "../../Assets/search_icon.png";
+import searchIcon from "../../Assets/searchicon.svg";
 import profIcon from "../../Assets/user_icon.png";
-import "../../Styles/sManagePosting.css";
 import { logAuditFrontend } from '../../logAuditFrontend';
+import '../../Styles/sCommunity.css';
 
 const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api";
 const API_BASE = "https://ibayanihub-backend.onrender.com/api";
@@ -16,17 +16,16 @@ const CommunityManagement = () => {
     const [selectedPost, setSelectedPost] = useState(null);
     const [message, setMessage] = useState("");
     const [announcements, setAnnouncements] = useState([]);
-    const [announcementSubTab, setAnnouncementSubTab] = useState('posts');
+    const [activeTab, setActiveTab] = useState('posts');
     const [announcementData, setAnnouncementData] = useState({ title: '', content: '', media: null });
     const [announcementMessage, setAnnouncementMessage] = useState('');
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
     const [announcementImagePreview, setAnnouncementImagePreview] = useState(null);
-
-    // --- COMMUNITY POST CREATION LOGIC (with profile picture) ---
-    const [postData, setPostData] = useState({ title: '', content: '', media: null });
-    const [postImagePreview, setPostImagePreview] = useState(null);
-    const [postMessage, setPostMessage] = useState('');
-    const [showPostCreateModal, setShowPostCreateModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [editMode, setEditMode] = useState(false);
+    const [editAnnouncement, setEditAnnouncement] = useState(null);
+    const [editAnnouncementImagePreview, setEditAnnouncementImagePreview] = useState(null);
+    const [editAnnouncementMessage, setEditAnnouncementMessage] = useState('');
 
     useEffect(() => {
         const timer = setInterval(() => setDateTime(new Date()), 1000);
@@ -42,26 +41,48 @@ const CommunityManagement = () => {
         }
     }, []);
 
-    useEffect(() => {
+    const fetchPostsAndAnnouncements = () => {
         axios.get(`${API_BASE}/posts`)
             .then(res => setCommunityPosts(res.data))
             .catch(err => console.log("Error fetching community posts:", err));
         axios.get(`${API_BASE}/announcements`)
             .then(res => setAnnouncements(res.data))
             .catch(err => console.log("Error fetching announcements:", err));
+    };
+
+    useEffect(() => {
+        fetchPostsAndAnnouncements();
     }, []);
 
-    const formatDate = (date) => date.toLocaleDateString("en-US", {
+    const formatDate = (date) => date && (new Date(date)).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
     });
 
-    const formatTime = (date) => date.toLocaleTimeString("en-US");
+    const formatTime = (date) => date && (new Date(date)).toLocaleTimeString("en-US");
+
+    // "20 mins ago" etc
+    const getTimeAgo = (date) => {
+        if (!date) return "";
+        const now = new Date();
+        const posted = new Date(date);
+        const diff = Math.floor((now - posted) / 60000); // in mins
+        if (diff < 1) return "Just now";
+        if (diff < 60) return `${diff} min${diff > 1 ? "s" : ""} ago`;
+        const hours = Math.floor(diff / 60);
+        if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+        const days = Math.floor(hours / 24);
+        return `${days} day${days > 1 ? "s" : ""} ago`;
+    };
 
     const handleViewPost = (post) => {
         setSelectedPost(post);
         setShowPostModal(true);
+        setEditMode(false);
+        setEditAnnouncement(null);
+        setEditAnnouncementImagePreview(null);
+        setEditAnnouncementMessage('');
     };
 
     const handleDeletePost = (postId) => {
@@ -75,16 +96,26 @@ const CommunityManagement = () => {
                         details: `Deleted community post with ID: ${postId}`,
                         platform: 'web'
                     });
-                    axios.get(`${API_BASE}/posts`)
-                        .then(res => {
-                            setCommunityPosts(res.data);
-                            setMessage("✅ Post deleted successfully!");
-                        })
-                        .catch(err => console.log("Error fetching community posts:", err));
+                    fetchPostsAndAnnouncements();
+                    setMessage("✅ Post deleted successfully!");
+                    setShowPostModal(false);
                 })
                 .catch(err => {
-                    console.log("Error deleting post:", err);
                     setMessage("❌ Failed to delete post.");
+                });
+        }
+    };
+
+    const handleDeleteAnnouncement = (announcementId) => {
+        if (window.confirm("Are you sure you want to delete this announcement?")) {
+            axios.delete(`${API_BASE}/announcements/${announcementId}`)
+                .then(() => {
+                    fetchPostsAndAnnouncements();
+                    setAnnouncementMessage("✅ Announcement deleted successfully!");
+                    setShowPostModal(false);
+                })
+                .catch(() => {
+                    setAnnouncementMessage("❌ Failed to delete announcement.");
                 });
         }
     };
@@ -124,86 +155,71 @@ const CommunityManagement = () => {
                 setAnnouncementData({ title: '', content: '', media: null });
                 setAnnouncementImagePreview(null);
                 setShowAnnouncementModal(false);
-                axios.get(`${API_BASE}/announcements`)
-                    .then(res => setAnnouncements(res.data))
-                    .catch(err => console.log("Error fetching announcements:", err));
+                fetchPostsAndAnnouncements();
             })
-            .catch(err => {
+            .catch(() => {
                 setAnnouncementMessage('❌ Failed to post announcement.');
-                console.log("Error posting announcement:", err);
             });
     };
 
-    const handleDeleteAnnouncement = (announcementId) => {
-        if (window.confirm("Are you sure you want to delete this announcement?")) {
-            axios.delete(`${API_BASE}/announcements/${announcementId}`)
-                .then(() => {
-                    axios.get(`${API_BASE}/announcements`)
-                        .then(res => {
-                            setAnnouncements(res.data);
-                            setAnnouncementMessage("✅ Announcement deleted successfully!");
-                        })
-                        .catch(err => console.log("Error fetching announcements:", err));
-                })
-                .catch(err => {
-                    console.log("Error deleting announcement:", err);
-                    setAnnouncementMessage("❌ Failed to delete announcement.");
-                });
-        }
+    // Edit announcement
+    const handleEditAnnouncementClick = (announcement) => {
+        setEditMode(true);
+        setEditAnnouncement({
+            ...announcement,
+            media: null // reset file input for editing
+        });
+        setEditAnnouncementImagePreview(announcement.media ? getMediaUrl(announcement.media) : null);
+        setEditAnnouncementMessage('');
     };
 
-    const handlePostChange = (e) => {
+    const handleEditAnnouncementChange = (e) => {
         const { name, value, files } = e.target;
         if (name === 'media' && files && files[0]) {
-            setPostData({ ...postData, media: files[0] });
-            setPostImagePreview(URL.createObjectURL(files[0]));
+            setEditAnnouncement({ ...editAnnouncement, media: files[0] });
+            setEditAnnouncementImagePreview(URL.createObjectURL(files[0]));
         } else {
-            setPostData({ ...postData, [name]: value });
+            setEditAnnouncement({ ...editAnnouncement, [name]: value });
         }
     };
 
-    const handlePostSubmit = async (e) => {
+    const handleEditAnnouncementSubmit = (e) => {
         e.preventDefault();
+        if (!editAnnouncement) return;
         const formData = new FormData();
-        formData.append('title', postData.title);
-        formData.append('content', postData.content);
-        // Use admin name if available, else fallback
-        formData.append('user', loggedInAdmin ? `${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_lastName}` : 'Caritas Manila');
-        formData.append('username', 'caritasmanila');
-        if (postData.media) {
-            formData.append('media', postData.media);
+        formData.append('title', editAnnouncement.title);
+        formData.append('content', editAnnouncement.content);
+        formData.append('user', editAnnouncement.user);
+        formData.append('username', editAnnouncement.username);
+        if (editAnnouncement.media) {
+            formData.append('media', editAnnouncement.media);
         }
-        try {
-            const res = await axios.post(`${API_BASE}/community-posts`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+        axios.put(`${API_BASE}/announcements/${editAnnouncement._id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+            .then(() => {
+                setEditAnnouncementMessage('✅ Announcement updated successfully!');
+                setSelectedPost({ ...selectedPost, ...editAnnouncement, media: editAnnouncementImagePreview });
+                setEditMode(false);
+                setEditAnnouncement(null);
+                setEditAnnouncementImagePreview(null);
+                fetchPostsAndAnnouncements();
+            })
+            .catch(() => {
+                setEditAnnouncementMessage('❌ Failed to update announcement.');
             });
-            setPostMessage('✅ Post created successfully!');
-            setPostData({ title: '', content: '', media: null });
-            setPostImagePreview(null);
-            setShowPostCreateModal(false);
-            // Refresh posts
-            const postsRes = await axios.get(`${API_BASE}/posts`);
-            setCommunityPosts(postsRes.data);
-        } catch (err) {
-            setPostMessage('❌ Failed to create post.');
-        }
     };
 
     // Helper for correct profile picture URL (force https)
     const getProfilePictureUrl = (profilePicture) => {
-        if (!profilePicture) return require('../../Assets/user_icon.png');
+        if (!profilePicture) return profIcon;
         let url = profilePicture;
         if (url.startsWith('http://')) url = url.replace('http://', 'https://');
         if (url.startsWith('https://')) return url;
-        // fallback to local asset
-        try {
-            return require('../../Assets/user_icon.png');
-        } catch (e) {
-            return '/user_icon.png';
-        }
+        return profIcon;
     };
 
-    // Helper to get full media URL (like in CommunityHub.jsx)
+    // Helper to get full media URL
     const getMediaUrl = (media) => {
         if (!media) return '';
         if (media.startsWith('http')) return media;
@@ -213,405 +229,549 @@ const CommunityManagement = () => {
         return media;
     };
 
-    // Card view for a community post matching the provided design
-    const renderCommunityPostCard = (post, onDelete, onClose) => {
-        const avatarSrc = getProfilePictureUrl(post.profilePicture);
-        const mediaSrc = getMediaUrl(post.media);
-        return (
-            <div style={{
-                background: '#fff',
-                borderRadius: 12,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                padding: 24,
-                width: 400,
-                margin: '0 auto',
-                position: 'relative',
-                fontFamily: 'inherit',
-            }}>
-                {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <div>
-                        <span style={{ fontWeight: 700, fontSize: 22 }}>Community </span>
-                        <span style={{ fontWeight: 700, fontSize: 22, color: '#F44336' }}>Post</span>
-                    </div>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#F44336' }}>
-                        &#10005;
-                    </button>
-                </div>
-                {/* Title */}
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{post.title}</div>
-                {/* Description */}
-                <div style={{ color: '#333', fontSize: 14, marginBottom: 16 }}>{post.content || post.description}</div>
-                {/* Post Image */}
-                {mediaSrc && (
-                    <div style={{ width: '100%', height: 180, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee', borderRadius: 8, overflow: 'hidden' }}>
-                        <img src={mediaSrc} alt="post" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                    </div>
-                )}
-                {/* Like/Comment Row */}
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ color: '#F44336', fontSize: 18, marginRight: 4 }}>&#10084;</span>
-                    <span style={{ marginRight: 16, fontSize: 14 }}>{Array.isArray(post.likes) ? post.likes.length : (post.likes || 0)}</span>
-                    <span style={{ color: '#888', fontSize: 18, marginRight: 4 }}>&#128172;</span>
-                    <span style={{ fontSize: 14 }}>{Array.isArray(post.comments) ? post.comments.length : (post.comments || 0)} Comments</span>
-                </div>
-                {/* Heart label */}
-                <div style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>Heart</div>
-                {/* User/Time/Delete Row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <img src={avatarSrc} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', marginRight: 8, border: '1px solid #eee', objectFit: 'cover' }} />
-                        <span style={{ fontWeight: 500, fontSize: 15 }}>{post.user || post.username}</span>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ color: '#888', fontSize: 13 }}>Posted {post.timeAgo || (post.createdAt ? new Date(post.createdAt).toLocaleString() : '')}</div>
-                        <button onClick={() => onDelete(post._id)} style={{ background: '#F44336', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 600, marginTop: 4, cursor: 'pointer' }}>
-                            Delete Post
-                        </button>
-                    </div>
-                </div>
-                {/* Comments Section */}
-                {Array.isArray(post.comments) && post.comments.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 8 }}>Comments</div>
-                        <div style={{ maxHeight: 120, overflowY: 'auto' }}>
-                            {post.comments.map((comment, idx) => (
-                                typeof comment === 'object' && comment !== null ? (
-                                    <div key={comment._id || idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                                        <img
-                                            src={getProfilePictureUrl(comment.profilePicture)}
-                                            alt="avatar"
-                                            style={{ width: 28, height: 28, borderRadius: '50%', marginRight: 8, border: '1px solid #eee', objectFit: 'cover' }}
-                                        />
-                                        <div>
-                                            <div style={{ fontWeight: 500, fontSize: 14 }}>{comment.fullName || comment.username}</div>
-                                            <div style={{ fontSize: 13, color: '#555' }}>{comment.text}</div>
-                                            <div style={{ fontSize: 11, color: '#aaa' }}>{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</div>
-                                        </div>
-                                    </div>
-                                ) : null
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    // Render announcement cards with images
-    const renderAnnouncementCard = (announcement) => {
-        return (
-            <div key={announcement._id} style={{
-                background: '#fff',
-                borderRadius: 12,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                padding: 16,
-                marginBottom: 16,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 16,
-                maxWidth: 500
-            }}>
-                {announcement.media && (
-                    <img src={announcement.media} alt="Announcement" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
-                )}
-                <div>
-                    <div style={{ fontWeight: 700, fontSize: 18 }}>{announcement.title}</div>
-                    <div style={{ color: '#555', fontSize: 14, margin: '4px 0' }}>{announcement.content}</div>
-                    <div style={{ color: '#888', fontSize: 12 }}>Posted {announcement.createdAt ? new Date(announcement.createdAt).toLocaleString() : ''}</div>
-                </div>
-            </div>
-        );
-    };
+    // SEARCH FILTER (add name, username)
+    const filteredPosts = communityPosts.filter(post =>
+        (post.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (post.content || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (post.user || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (post.username || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const filteredAnnouncements = announcements.filter(a =>
+        (a.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.content || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.user || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (a.username || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
-        <div id="users-container">
+        <div id="community-container">
             {/* Header */}
-            <div id="users-header-container">
-                <div className="header-box date-box">
-                    <p className="date">{formatDate(dateTime)}</p>
-                    <p className="time">{formatTime(dateTime)}</p>
+            <div className="dashb-header">
+                <div className="dashb-header-left">
+                    <div className="dashb-date-time-box">
+                        <div className="dashb-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div className="dashb-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+                    </div>
                 </div>
-                <div className="header-box search-box">
-                    <input type="text" placeholder="Search" />
-                    <img src={searchIcon} alt="Search" />
-                </div>
-                <div className="header-box profile-box">
-                    <img src={profIcon} alt="User" className="profile-icon" />
-                    <div className="profile-info">
-                        {loggedInAdmin ? (
-                            <>
-                                <p className="profile-name">
-                                    {`${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_middleName || ''} ${loggedInAdmin.admin_lastName}`}
-                                </p>
-                                <p className="profile-email">{loggedInAdmin.admin_email}</p>
-                            </>
-                        ) : (
-                            <>
-                                <p className="profile-name">Loading...</p>
-                                <p className="profile-email">Fetching admin data</p>
-                            </>
-                        )}
+                <div className="dashb-title-main">Community Management</div>
+                <div className="dashb-header-right">
+                    <div className="dashb-admin-profile">
+                        <img src={profIcon} alt="User" className="dashb-admin-img" />
+                        <div className="dashb-admin-details">
+                            <span className="dashb-admin-name">
+                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
+                            </span>
+                            <span className="dashb-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div className="posting-header">
-                <h1>Community <span>Management</span></h1>
-                <div className="sub-tabs">
-                    <button
-                        className={announcementSubTab === 'posts' ? 'active-sub-tab' : ''}
-                        onClick={() => setAnnouncementSubTab('posts')}
-                    >
-                        Posts
-                    </button>
-                    <button
-                        className={announcementSubTab === 'announcements' ? 'active-sub-tab' : ''}
-                        onClick={() => setAnnouncementSubTab('announcements')}
-                    >
-                        Announcements
-                    </button>
+            {/* Tabs, Search, Button */}
+            <div className="community-top-bar">
+                <div className="community-tabs">
+                    <button className={activeTab === 'posts' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('posts')}>Community Posts</button>
+                    <button className={activeTab === 'announcements' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('announcements')}>Announcements</button>
+                </div>
+                <div className="community-search-container">
+                    <div className="community-searchbar">
+                        <img src={searchIcon} alt="Search" className="community-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search by name, username, title or content..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="community-search-input"
+                        />
+                    </div>
+                    {activeTab === 'announcements' && (
+                        <button className="community-add-announcement-btn" onClick={() => setShowAnnouncementModal(true)}>
+                            + Add Announcement
+                        </button>
+                    )}
                 </div>
             </div>
-            {announcementSubTab === 'posts' && (
-                <div className="list-view">
-                    <button className="post-announcement-btn" onClick={() => setShowPostCreateModal(true)}>
-                        + Create Community Post
-                    </button>
-                    <table className="users-table">
-                        <thead>
-                            <tr>
-                                <th>No.</th>
-                                <th>Title</th>
-                                <th>Content</th>
-                                <th>Posted By</th>
-                                <th>Profile Picture</th>
-                                <th>Posted Date</th>
-                                <th>Image</th>
-                                <th>Likes</th>
-                                <th>Comments</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {communityPosts.map((post, index) => (
-                                <tr key={post._id}>
-                                    <td>{String(index + 1).padStart(2, '0')}</td>
-                                    <td>{post.title}</td>
-                                    <td className="content-cell">{post.content}</td>
-                                    <td>
-                                        <div className="user-info">
-                                            <span className="full-name">{post.user}</span>
-                                            <span className="username">@{post.username}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <img
-                                            src={getProfilePictureUrl(post.profilePicture)}
-                                            alt="avatar"
-                                            style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #eee', objectFit: 'cover' }}
-                                        />
-                                    </td>
-                                    <td>{formatDate(new Date(post.createdAt))}</td>
-                                    <td>
-                                        {post.media && (
-                                            <img
-                                                src={getMediaUrl(post.media)}
-                                                alt="Post media"
-                                                className="post-thumbnail"
-                                                style={{ maxWidth: 80, maxHeight: 80, objectFit: 'contain', borderRadius: 6, background: '#eee' }}
-                                            />
-                                        )}
-                                    </td>
-                                    <td>{post.likes?.length || 0}</td>
-                                    <td>{post.comments?.length || 0}</td>
-                                    <td>
-                                        <button
-                                            className="view-button"
-                                            onClick={() => handleViewPost(post)}
-                                            tabIndex={0}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            View
-                                        </button>
-                                        <button
-                                            className="delete-button"
-                                            onClick={() => handleDeletePost(post._id)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-            {announcementSubTab === 'announcements' && (
-                <div>
-                    <button className="post-announcement-btn" onClick={() => setShowAnnouncementModal(true)}>
-                        + Post Announcement
-                    </button>
-                    <div className="list-view">
-                        <table className="users-table">
+            <div className="community-list-view">
+                <div className="community-table-scroll">
+                    {activeTab === "posts" ? (
+                        <table className="community-table">
                             <thead>
                                 <tr>
-                                    <th>No.</th>
+                                    <th>Profile Picture</th>
+                                    <th>Posted By</th>
+                                    <th>Date Posted</th>
                                     <th>Title</th>
                                     <th>Content</th>
-                                    <th>Posted By</th>
-                                    <th>Profile Picture</th>
-                                    <th>Posted Date</th>
-                                    <th>Image</th>
-                                    <th>Likes</th>
+                                    <th>Hearts</th>
                                     <th>Comments</th>
+                                    <th>Report</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {announcements.map((post, index) => (
+                                {filteredPosts.map((post) => (
                                     <tr key={post._id}>
-                                        <td>{String(index + 1).padStart(2, '0')}</td>
-                                        <td>{post.title}</td>
-                                        <td className="content-cell">{post.content}</td>
-                                        <td>
-                                            <div className="user-info">
-                                                <span className="full-name">{post.user}</span>
-                                                <span className="username">@{post.username}</span>
-                                            </div>
-                                        </td>
                                         <td>
                                             <img
                                                 src={getProfilePictureUrl(post.profilePicture)}
                                                 alt="avatar"
-                                                style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #eee', objectFit: 'cover' }}
+                                                className="community-profile-img"
                                             />
                                         </td>
-                                        <td>{formatDate(new Date(post.createdAt))}</td>
                                         <td>
-                                            {post.media && (
-                                                <img
-                                                    src={getMediaUrl(post.media)}
-                                                    alt="Post media"
-                                                    className="post-thumbnail"
-                                                    style={{ maxWidth: 80, maxHeight: 80, objectFit: 'contain', borderRadius: 6, background: '#eee' }}
-                                                />
-                                            )}
+                                            <span className="full-name">{post.user}</span>
+                                            <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
                                         </td>
-                                        <td>{post.likes?.length || 0}</td>
-                                        <td>{post.comments?.length || 0}</td>
+                                        <td>
+                                            {formatDate(post.createdAt)} {formatTime(post.createdAt)}
+                                        </td>
+                                        <td>{post.title}</td>
+                                        <td className="content-cell">{post.content}</td>
+                                        <td>
+                                            {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
+                                        </td>
+                                        <td>
+                                            {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
+                                        </td>
+                                        <td>
+                                            {typeof post.reports === "number"
+                                                ? post.reports
+                                                : (post.reports && post.reports.length
+                                                    ? post.reports.length
+                                                    : 0)}
+                                        </td>
                                         <td>
                                             <button
-                                                className="view-button"
+                                                className="community-view-btn"
                                                 onClick={() => handleViewPost(post)}
+                                                tabIndex={0}
                                             >
-                                                View
-                                            </button>
-                                            <button
-                                                className="delete-button"
-                                                onClick={() => handleDeleteAnnouncement(post._id)}
-                                            >
-                                                Delete
+                                                View Post
                                             </button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-                    {showAnnouncementModal && (
-                        <div className="modal-overlay">
-                            <div className="modal-content post-detail-modal">
-                                <div className="modal-header">
-                                    <h2>Post Announcement</h2>
-                                    <button className="close-button" onClick={() => setShowAnnouncementModal(false)}>×</button>
-                                </div>
-                                <form onSubmit={handleAnnouncementSubmit} className="announcement-form">
-                                    <input
-                                        type="text"
-                                        name="title"
-                                        placeholder="Title"
-                                        value={announcementData.title}
-                                        onChange={handleAnnouncementChange}
-                                        required
-                                    />
-                                    <textarea
-                                        name="content"
-                                        placeholder="Content"
-                                        value={announcementData.content}
-                                        onChange={handleAnnouncementChange}
-                                        required
-                                    />
-                                    <input
-                                        type="file"
-                                        name="media"
-                                        accept="image/*"
-                                        onChange={handleAnnouncementChange}
-                                    />
-                                    {announcementImagePreview && (
-                                        <img src={announcementImagePreview} alt="Preview" className="post-thumbnail" />
-                                    )}
-                                    <button type="submit">Post</button>
-                                    {announcementMessage && <p>{announcementMessage}</p>}
-                                </form>
-                            </div>
-                        </div>
+                    ) : (
+                        <table className="community-table">
+                            <thead>
+                                <tr>
+                                    <th>Profile Picture</th>
+                                    <th>Posted By</th>
+                                    <th>Date Posted</th>
+                                    <th>Title</th>
+                                    <th>Content</th>
+                                    <th>Hearts</th>
+                                    <th>Comments</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredAnnouncements.map((post) => (
+                                    <tr key={post._id}>
+                                        <td>
+                                            <img
+                                                src={getProfilePictureUrl(post.profilePicture)}
+                                                alt="avatar"
+                                                className="community-profile-img"
+                                            />
+                                        </td>
+                                        <td>
+                                            <span className="full-name">{post.user}</span>
+                                            <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
+                                        </td>
+                                        <td>
+                                            {formatDate(post.createdAt)} {formatTime(post.createdAt)}
+                                        </td>
+                                        <td>{post.title}</td>
+                                        <td className="content-cell">{post.content}</td>
+                                        <td>
+                                            {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
+                                        </td>
+                                        <td>
+                                            {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="community-view-btn"
+                                                onClick={() => handleViewPost(post)}
+                                                tabIndex={0}
+                                            >
+                                                View Post
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     )}
                 </div>
-            )}
-            {showPostModal && selectedPost && (
-                <div className="modal-overlay">
-                    <div className="modal-content post-detail-modal">
-                        <div className="modal-header">
-                            <h2>View Community Post</h2>
-                            <button className="close-button" onClick={() => setShowPostModal(false)}>×</button>
+            </div>
+
+            {/* Announcement Modal */}
+            {showAnnouncementModal && (
+                <div className="community-modal-overlay">
+                    <div className="community-modal-content">
+                        <div className="community-modal-header">
+                            <h2>Post Announcement</h2>
+                            <button className="community-close-btn" onClick={() => setShowAnnouncementModal(false)}>×</button>
                         </div>
-                        {renderCommunityPostCard(selectedPost, handleDeletePost, () => setShowPostModal(false))}
-                    </div>
-                </div>
-            )}
-            {showPostCreateModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content post-detail-modal">
-                        <div className="modal-header">
-                            <h2>Create Community Post</h2>
-                            <button className="close-button" onClick={() => setShowPostCreateModal(false)}>×</button>
-                        </div>
-                        <form onSubmit={handlePostSubmit} className="announcement-form">
+                        <form onSubmit={handleAnnouncementSubmit} className="community-announcement-form">
                             <input
                                 type="text"
                                 name="title"
                                 placeholder="Title"
-                                value={postData.title}
-                                onChange={handlePostChange}
+                                value={announcementData.title}
+                                onChange={handleAnnouncementChange}
                                 required
                             />
                             <textarea
                                 name="content"
                                 placeholder="Content"
-                                value={postData.content}
-                                onChange={handlePostChange}
+                                value={announcementData.content}
+                                onChange={handleAnnouncementChange}
                                 required
                             />
                             <input
                                 type="file"
                                 name="media"
                                 accept="image/*"
-                                onChange={handlePostChange}
+                                onChange={handleAnnouncementChange}
                             />
-                            {postImagePreview && (
-                                <img src={postImagePreview} alt="Preview" className="post-thumbnail" />
+                            {announcementImagePreview && (
+                                <img src={announcementImagePreview} alt="Preview" className="community-post-thumbnail" />
                             )}
                             <button type="submit">Post</button>
-                            {postMessage && <p>{postMessage}</p>}
+                            {announcementMessage && <p>{announcementMessage}</p>}
                         </form>
                     </div>
                 </div>
             )}
-            <div style={{ margin: '24px 0' }}>
-                <h2>Announcements</h2>
-                {announcements.length === 0 && <div>No announcements found.</div>}
-                {announcements.map(renderAnnouncementCard)}
-            </div>
+
+            {/* Announcement View/Edit Modal */}
+            {showPostModal && selectedPost && activeTab === "announcements" && (
+                <div className="community-modal-overlay" style={{
+                    position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+                    background: "rgba(0,0,0,0.15)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999
+                }}>
+                    <div className="community-modal-content" style={{
+                        background: "#fff",
+                        borderRadius: 14,
+                        boxShadow: "0 6px 32px rgba(0,0,0,0.18)",
+                        padding: 0,
+                        width: 500,
+                        maxWidth: "96vw",
+                        minHeight: 180,
+                        position: "relative"
+                    }}>
+                        <div style={{ padding: "30px 30px 0 30px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ fontWeight: 700, fontSize: 28, letterSpacing: -1.5 }}>
+                                View Announcement
+                            </div>
+                            <button
+                                onClick={() => { setShowPostModal(false); setEditMode(false); }}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    fontSize: 30,
+                                    fontWeight: 500,
+                                    color: "#555",
+                                    cursor: "pointer"
+                                }}
+                                aria-label="Close"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        {!editMode ? (
+                            <>
+                                <div style={{ padding: "0 30px 0 30px" }}>
+                                    <div style={{ fontWeight: 700, fontSize: 20, margin: "20px 0 6px 0" }}>
+                                        {selectedPost.title}
+                                    </div>
+                                    <div style={{ color: "#232323", fontSize: 15, marginBottom: 16 }}>
+                                        {selectedPost.content}
+                                    </div>
+                                </div>
+                                {selectedPost.media && (
+                                    <div style={{ width: "100%", padding: 0, marginTop: 2 }}>
+                                        <img
+                                            src={selectedPost.media}
+                                            alt="announcement-media"
+                                            style={{
+                                                display: "block",
+                                                width: "100%",
+                                                maxHeight: 260,
+                                                objectFit: "cover",
+                                                borderRadius: 4,
+                                                margin: "0 auto"
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                <div style={{
+                                    padding: "18px 30px 0 30px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 24,
+                                    color: "#bdbdbd",
+                                    fontSize: 16,
+                                    fontWeight: 500
+                                }}>
+                                    <span style={{ color: "#e63946", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                                        <svg width="18" height="18" fill="#e63946" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                        {selectedPost.hearts ?? 0}
+                                    </span>
+                                    <span style={{ color: "#888", fontWeight: 500 }}>
+                                        {typeof selectedPost.comments === "number"
+                                            ? `${selectedPost.comments} Comments`
+                                            : `${selectedPost.comments?.length || 0} Comments`
+                                        }
+                                    </span>
+                                </div>
+                                <div style={{
+                                    padding: "20px 30px 20px 30px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between"
+                                }}>
+                                    <div style={{
+                                        display: "flex",
+                                        alignItems: "center"
+                                    }}>
+                                        <img
+                                            src={getProfilePictureUrl(selectedPost.profilePicture)}
+                                            alt="profile"
+                                            style={{ width: 32, height: 32, borderRadius: "50%", marginRight: 10 }}
+                                        />
+                                        <span style={{ fontWeight: 600, fontSize: 16 }}>{selectedPost.user}</span>
+                                    </div>
+                                    <div style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 20
+                                    }}>
+                                        <span style={{ color: "#888", fontSize: 14 }}>
+                                            Posted {getTimeAgo(selectedPost.createdAt)}
+                                        </span>
+                                        <button
+                                            className="community-view-btn"
+                                            style={{ marginRight: 10 }}
+                                            onClick={() => handleEditAnnouncementClick(selectedPost)}
+                                        >
+                                            Edit Announcement
+                                        </button>
+                                        <button
+                                            className="community-delete-btn"
+                                            onClick={() => handleDeleteAnnouncement(selectedPost._id)}
+                                        >
+                                            Delete Post
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <form onSubmit={handleEditAnnouncementSubmit} className="community-announcement-form" style={{ padding: 24 }}>
+                                <input
+                                    type="text"
+                                    name="title"
+                                    placeholder="Title"
+                                    value={editAnnouncement?.title || ""}
+                                    onChange={handleEditAnnouncementChange}
+                                    required
+                                />
+                                <textarea
+                                    name="content"
+                                    placeholder="Content"
+                                    value={editAnnouncement?.content || ""}
+                                    onChange={handleEditAnnouncementChange}
+                                    required
+                                />
+                                <input
+                                    type="file"
+                                    name="media"
+                                    accept="image/*"
+                                    onChange={handleEditAnnouncementChange}
+                                />
+                                {editAnnouncementImagePreview && (
+                                    <img src={editAnnouncementImagePreview} alt="Preview" className="community-post-thumbnail" />
+                                )}
+                                <button type="submit" style={{ marginTop: 12 }}>Save</button>
+                                {editAnnouncementMessage && <p>{editAnnouncementMessage}</p>}
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Post Modal for Community Posts */}
+            {showPostModal && selectedPost && activeTab === "posts" && (
+                <div
+                    className="community-modal-overlay"
+                    style={{
+                        position: "fixed",
+                        top: 0, left: 0,
+                        width: "100vw", height: "100vh",
+                        background: "rgba(0,0,0,0.15)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        zIndex: 9999
+                    }}
+                >
+                    <div
+                        className="community-modal-content"
+                        style={{
+                            background: "#fff",
+                            borderRadius: 14,
+                            boxShadow: "0 6px 32px rgba(0,0,0,0.18)",
+                            padding: 0,
+                            width: 500,
+                            maxWidth: "96vw",
+                            minHeight: 180,
+                            position: "relative"
+                        }}
+                    >
+                        {/* Modal Header */}
+                        <div style={{ padding: "30px 30px 0 30px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ fontWeight: 700, fontSize: 28, letterSpacing: -1.5 }}>
+                                View Community <span style={{ color: "#e63946" }}>Post</span>
+                            </div>
+                            <button
+                                onClick={() => setShowPostModal(false)}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    fontSize: 30,
+                                    fontWeight: 500,
+                                    color: "#555",
+                                    cursor: "pointer"
+                                }}
+                                aria-label="Close"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Post Title & Content */}
+                        <div style={{ padding: "0 30px 0 30px" }}>
+                            <div style={{ fontWeight: 700, fontSize: 20, margin: "20px 0 6px 0" }}>
+                                {selectedPost.title}
+                            </div>
+                            <div style={{ color: "#232323", fontSize: 15, marginBottom: 16 }}>
+                                {selectedPost.content}
+                            </div>
+                        </div>
+
+                        {/* Post Image */}
+                        {selectedPost.media && (
+                            <div style={{ width: "100%", padding: 0, marginTop: 2 }}>
+                                <img
+                                    src={selectedPost.media}
+                                    alt="post-media"
+                                    style={{
+                                        display: "block",
+                                        width: "100%",
+                                        maxHeight: 260,
+                                        objectFit: "cover",
+                                        borderRadius: 4,
+                                        margin: "0 auto"
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {/* Hearts, Comments */}
+                        <div style={{
+                            padding: "18px 30px 0 30px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 24,
+                            color: "#bdbdbd",
+                            fontSize: 16,
+                            fontWeight: 500
+                        }}>
+                            <span style={{ color: "#e63946", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                                <svg width="18" height="18" fill="#e63946" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                {selectedPost.hearts ?? 0}
+                            </span>
+                            <span style={{ color: "#888", fontWeight: 500 }}>
+                                {typeof selectedPost.comments === "number"
+                                    ? `${selectedPost.comments} Comments`
+                                    : `${selectedPost.comments?.length || 0} Comments`
+                                }
+                            </span>
+                        </div>
+
+                        {/* Action Bar */}
+                        <div style={{
+                            padding: "12px 30px 0 30px",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            fontSize: 17
+                        }}>
+                            <div style={{
+                                display: "flex", alignItems: "center", gap: 20, color: "#bdbdbd"
+                            }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <svg width="22" height="22" fill="none" stroke="#bdbdbd" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                    Heart
+                                </span>
+                                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <svg width="22" height="22" fill="none" stroke="#bdbdbd" strokeWidth={1.5} viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    Comment
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{
+                            padding: "20px 30px 20px 30px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                        }}>
+                            <div style={{
+                                display: "flex",
+                                alignItems: "center"
+                            }}>
+                                <img
+                                    src={getProfilePictureUrl(selectedPost.profilePicture)}
+                                    alt="profile"
+                                    style={{ width: 32, height: 32, borderRadius: "50%", marginRight: 10 }}
+                                />
+                                <span style={{ fontWeight: 600, fontSize: 16 }}>{selectedPost.user}</span>
+                            </div>
+                            <div style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 20
+                            }}>
+                                <span style={{ color: "#888", fontSize: 14 }}>
+                                    Posted {getTimeAgo(selectedPost.createdAt)}
+                                </span>
+                                <button
+                                    style={{
+                                        background: "#e63946",
+                                        color: "#fff",
+                                        border: "none",
+                                        borderRadius: 6,
+                                        padding: "8px 18px",
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                        fontSize: 15
+                                    }}
+                                    onClick={() => {
+                                        setShowPostModal(false);
+                                        handleDeletePost(selectedPost._id);
+                                    }}
+                                >
+                                    Delete Post
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
-import "../../Styles/sUsers.css";
-import searchIcon from "../../Assets/search_icon.png";
+import "../../Styles/sAdmin.css";
+import searchIcon from "../../Assets/searchicon.svg";
 import profIcon from "../../Assets/user_icon.png";
-import addUserIcon from "../../Assets/adduser.png";
+import addUserIcon from "../../Assets/addicon.svg";
+import dlIcon from "../../Assets/downloadicon.svg";
+import filterIcon from "../../Assets/filtericon.svg";
 import AddAdmin from "./Modal/AddAdmin";
 import ViewAdmin from "./Modal/ViewAdmin";
+import ConfirmAlert from "./Modal/ConfirmAlert";
 import { logAuditFrontend } from '../../logAuditFrontend';
 
 const API_BASE = "https://ibayanihubweb-backend.onrender.com";
@@ -20,6 +23,7 @@ const AdminManagement = () => {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [loggedInAdmin, setLoggedInAdmin] = useState(null);
   const [activeTab, setActiveTab] = useState('active');
+  const [confirmAlert, setConfirmAlert] = useState({ open: false, type: "warning", message: "", onConfirm: null });
 
   // Fetch all admins
   useEffect(() => {
@@ -45,14 +49,12 @@ const AdminManagement = () => {
   }, []);
 
   const formatDate = date =>
-    date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-
-  const formatTime = date => date.toLocaleTimeString("en-US");
+    date ? new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A";
 
   const formatBirthdate = birthdate => {
     if (!birthdate) return 'MM/DD/YYYY';
     const d = new Date(birthdate);
-    return isNaN(d) ? 'Invalid Date' : d.toLocaleDateString("en-US");
+    return isNaN(d) ? 'Invalid Date' : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   };
 
   const activeAdmins = admins.filter(admin => !admin.isDeactivated);
@@ -72,21 +74,51 @@ const AdminManagement = () => {
     return searchMatch && statusMatch;
   });
 
+  // Use ConfirmAlert for deactivate/reactivate
   const handleAdminStatusChange = (adminId, deactivate) => {
-    const url = deactivate ? `${API_BASE}/api/deactivate` : `${API_BASE}/api/reactivate`;
-    axios.post(url, { adminId })
-      .then(() => {
-        logAuditFrontend({
-          userId: localStorage.getItem('adminEmail') || 'unknown',
-          userType: 'admin',
-          action: deactivate ? 'Deactivate Admin' : 'Reactivate Admin',
-          details: `${deactivate ? 'Deactivated' : 'Reactivated'} admin with ID: ${adminId}`,
-          platform: 'web'
-        });
-        axios.get(`${API_BASE}/api/getAdmin`).then((response) => setAdmins(response.data));
-        setShowViewAdminModal(false);
-      })
-      .catch((error) => alert('Failed to update admin status'));
+    setConfirmAlert({
+      open: true,
+      type: deactivate ? "warning" : "success",
+      title: deactivate ? "Deactivate Admin" : "Reactivate Admin",
+      message: deactivate
+        ? "Are you sure you want to deactivate this admin? They will lose access to the platform."
+        : "Are you sure you want to reactivate this admin? They will regain access to the platform.",
+      confirmText: deactivate ? "Deactivate" : "Reactivate",
+      cancelText: "Cancel",
+      onConfirm: () => {
+        // Use new explicit endpoints for admin management
+        const url = deactivate ? `${API_BASE}/api/deactivateAdmin` : `${API_BASE}/api/reactivateAdmin`;
+        axios.post(url, { adminId })
+          .then(() => {
+            logAuditFrontend({
+              userId: localStorage.getItem('adminEmail') || 'unknown',
+              userType: 'admin',
+              action: deactivate ? 'Deactivate Admin' : 'Reactivate Admin',
+              details: `${deactivate ? 'Deactivated' : 'Reactivated'} admin with ID: ${adminId}`,
+              platform: 'web'
+            });
+            axios.get(`${API_BASE}/api/getAdmin`).then((response) => setAdmins(response.data));
+            setShowViewAdminModal(false);
+            setConfirmAlert({ ...confirmAlert, open: false });
+          })
+          .catch((error) => {
+            let msg = 'Failed to update admin status';
+            if (error.response && error.response.data && error.response.data.message) {
+              msg += `: ${error.response.data.message}`;
+            }
+            setConfirmAlert({
+              ...confirmAlert,
+              open: true,
+              type: "error",
+              title: "Failed",
+              message: msg,
+              confirmText: "OK",
+              cancelText: "",
+              onConfirm: () => setConfirmAlert({ ...confirmAlert, open: false }),
+            });
+          });
+      }
+    });
   };
 
   // Download admins as CSV
@@ -119,7 +151,7 @@ const AdminManagement = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `admins_${activeTab}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `admins_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -156,177 +188,165 @@ const AdminManagement = () => {
     });
   }, []);
 
+  // Columns for Active and Deactivated tabs (per Image 4)
+  const activeAdminListColumns = [
+    { key: "fullName", label: "Name" },
+    { key: "admin_email", label: "Email" },
+    { key: "admin_role", label: "Role" },
+    { key: "admin_dateOfBirth", label: "Birthdate" },
+    { key: "admin_gender", label: "Gender" },
+    { key: "admin_phoneNumber", label: "Phone Number" },
+    { key: "status", label: "Status" },
+    { key: "createdAt", label: "Created At" },
+    { key: "action", label: "Action" },
+  ];
+  const deactivatedAdminListColumns = [
+    { key: "fullName", label: "Name" },
+    { key: "admin_email", label: "Email" },
+    { key: "admin_role", label: "Role" },
+    { key: "admin_dateOfBirth", label: "Birthdate" },
+    { key: "admin_gender", label: "Gender" },
+    { key: "admin_phoneNumber", label: "Phone Number" },
+    { key: "deactivatedAt", label: "Deactivated At" },
+    { key: "action", label: "Action" },
+  ];
+
+  const renderAdminListRow = (admin, i, isDeactivated = false) => (
+    <tr key={admin._id}>
+      <td>
+        {`${admin.admin_firstName || ''} ${admin.admin_middleName || ''} ${admin.admin_last_name || admin.admin_lastName || ''}`}
+      </td>
+      <td>{admin.admin_email || 'N/A'}</td>
+      <td><b>{admin.admin_role || 'N/A'}</b></td>
+      <td><b>{formatBirthdate(admin.admin_dateOfBirth)}</b></td>
+      <td><b>{admin.admin_gender || 'N/A'}</b></td>
+      <td><b>{admin.admin_phoneNumber || 'N/A'}</b></td>
+      {isDeactivated ? (
+        <td>
+          {admin.deactivatedAt
+            ? formatDate(admin.deactivatedAt)
+            : admin.updatedAt
+              ? formatDate(admin.updatedAt)
+              : "N/A"}
+        </td>
+      ) : (
+        <>
+          <td>
+            <span className={admin.isOnline ? "admin-status-label-online" : "admin-status-label-offline"}>
+              {admin.isOnline ? "Online" : "Offline"}
+            </span>
+          </td>
+          <td>
+            {admin.createdAt
+              ? formatDate(admin.createdAt)
+              : "N/A"}
+          </td>
+        </>
+      )}
+      <td>
+        <button
+          className="admin-view-btn-list"
+          onClick={() => {
+            setSelectedAdmin(admin);
+            setShowViewAdminModal(true);
+            logAuditFrontend({
+              userId: localStorage.getItem('adminEmail') || 'unknown',
+              userType: 'admin',
+              action: 'View Admin Profile',
+              details: `Viewed admin profile: ${admin.admin_email} (${admin.admin_firstName} ${admin.admin_lastName})`,
+              platform: 'web'
+            });
+          }}
+        >
+          View
+        </button>
+      </td>
+    </tr>
+  );
+
+  // Handle admin profile update from modal
+  const handleProfileUpdate = (updatedAdmin) => {
+    setAdmins((prev) => prev.map(a => a._id === updatedAdmin._id ? updatedAdmin : a));
+    setSelectedAdmin(updatedAdmin);
+  };
+
   return (
-    <div id="users-container">
+    <div className="admins-container">
       {/* HEADER */}
-      <div id="users-header-container">
-        <div className="header-box date-box">
-          <p className="date">{formatDate(dateTime)}</p>
-          <p className="time">{formatTime(dateTime)}</p>
+      <div className="admins-header">
+        <div className="admins-header-left">
+          <div className="admins-date-time-box">
+            <div className="admins-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            <div className="admins-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+          </div>
         </div>
-        <div className="header-box search-box">
-          <input
-            type="text"
-            placeholder="Search by name, email..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-          <img src={searchIcon} alt="Search" />
-        </div>
-        <div className="header-box profile-box">
-          <img src={profIcon} alt="User" className="profile-icon" />
-          <div className="profile-info">
-            {loggedInAdmin ? (
-              <>
-                <p className="profile-name">
-                  {`${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_middleName || ''} ${loggedInAdmin.admin_lastName}`}
-                </p>
-                <p className="profile-email">{loggedInAdmin.admin_email}</p>
-              </>
-            ) : (
-              <>
-                <p className="profile-name">Loading...</p>
-                <p className="profile-email">Fetching admin data</p>
-              </>
-            )}
+        <div className="admins-title-main">Admin Management</div>
+        <div className="admins-header-right">
+          <div className="admins-admin-profile">
+            <img src={profIcon} alt="User" className="admins-admin-img" />
+            <div className="admins-admin-details">
+              <span className="admins-admin-name">
+                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
+              </span>
+              <span className="admins-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+            </div>
           </div>
         </div>
       </div>
-
       {/* TOP BAR */}
-      <div className="users-top-bar">
-        <div className="users-title">
-          <p className="title">Admins</p>
-          <p className="count">({activeTab === 'active' ? activeAdmins.length : deactivatedAdmins.length})</p>
+      <div className="admins-top-bar">
+        <div className="admins-tabs">
+          <button className={activeTab === 'active' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('active')}> Active Admins</button>
+          <button className={activeTab === 'deactivated' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('deactivated')}>Deactivated Admins</button>
         </div>
-        <div className="users-filters">
-          <button className={activeTab === 'active' ? 'active-tab' : ''} onClick={() => setActiveTab('active')}>Active</button>
-          <button className={activeTab === 'deactivated' ? 'active-tab' : ''} onClick={() => setActiveTab('deactivated')}>Deactivated</button>
-          <button className="add-user-button" onClick={() => setShowAddAdminModal(true)}>
+        <div className="admins-search-container">
+          <button className="admins-add-button" onClick={() => setShowAddAdminModal(true)}>
+            <img src={addUserIcon} alt="Add User" />
             <span>Add Admin</span>
-            <img src={addUserIcon} alt="Add Admin" />
           </button>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="All">Status</option>
-            <option value="Online">Online</option>
-            <option value="Offline">Offline</option>
-          </select>
-          <button className="download-button" onClick={handleDownloadAdmins}>Download</button>
+          <div className="admins-searchbar">
+            <img src={searchIcon} alt="Search" className="admins-search-icon" />
+            <input
+              type="text"
+              placeholder="Search by name, email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="admins-search-input"
+            />
+          </div>
+          <div className="admins-filter">
+            <img src={filterIcon} className="admins-filter-icon" />
+          </div>
+          <button className="admins-download-button" onClick={handleDownloadAdmins}>
+            <img src={dlIcon} alt="----" />
+            <span>Download</span>
+          </button>
         </div>
       </div>
-
-      {/* ADMIN LIST */}
-      <div className="users-content list-view">
-        {activeTab === 'active' ? (
-          activeAdmins.length === 0 ? (
-            <p>No admins found</p>
-          ) : (
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>No.</th>
-                  <th>Full Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Phone No.</th>
-                  <th>Birthdate</th>
-                  <th>Gender</th>
-                  <th>Address</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeAdmins.map((admin, index) => (
-                  <tr key={admin._id}>
-                    <td>{String(index + 1).padStart(2, '0')}</td>
-                    <td>{`${admin.admin_firstName || ''} ${admin.admin_middleName || ''} ${admin.admin_lastName || ''}`}</td>
-                    <td>{admin.admin_email || 'N/A'}</td>
-                    <td>{admin.admin_role || 'N/A'}</td>
-                    <td>{admin.admin_phoneNumber || 'N/A'}</td>
-                    <td>{formatBirthdate(admin.admin_dateOfBirth)}</td>
-                    <td>{admin.admin_gender || 'N/A'}</td>
-                    <td>{admin.admin_address || ''} {admin.admin_city || ''}</td>
-                    <td>
-                      <span className={admin.isOnline ? "status-online" : "status-offline"}>
-                        {admin.isOnline ? "Online" : "Offline"}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="view-button"
-                        onClick={() => {
-                          setSelectedAdmin(admin);
-                          setShowViewAdminModal(true);
-                          logAuditFrontend({
-                            userId: localStorage.getItem('adminEmail') || 'unknown',
-                            userType: 'admin',
-                            action: 'View Admin Profile',
-                            details: `Viewed admin profile: ${admin.admin_email} (${admin.admin_firstName} ${admin.admin_lastName})`,
-                            platform: 'web'
-                          });
-                        }}
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )
-        ) : (
-          deactivatedAdmins.length === 0 ? (
-            <p>No deactivated admins</p>
-          ) : (
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>No.</th>
-                  <th>Full Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Phone No.</th>
-                  <th>Birthdate</th>
-                  <th>Gender</th>
-                  <th>Address</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {deactivatedAdmins.map((admin, index) => (
-                  <tr key={admin._id}>
-                    <td>{String(index + 1).padStart(2, '0')}</td>
-                    <td>{`${admin.admin_firstName || ''} ${admin.admin_middleName || ''} ${admin.admin_lastName || ''}`}</td>
-                    <td>{admin.admin_email || 'N/A'}</td>
-                    <td>{admin.admin_role || 'N/A'}</td>
-                    <td>{admin.admin_phoneNumber || 'N/A'}</td>
-                    <td>{formatBirthdate(admin.admin_dateOfBirth)}</td>
-                    <td>{admin.admin_gender || 'N/A'}</td>
-                    <td>{admin.admin_address || ''} {admin.admin_city || ''}</td>
-                    <td>
-                      <span className={admin.isOnline ? "status-online" : "status-offline"}>
-                        {admin.isOnline ? "Online" : "Offline"}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        className="view-button"
-                        onClick={() => {
-                          setSelectedAdmin(admin);
-                          setShowViewAdminModal(true);
-                        }}
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )
-        )}
+      {/* ADMIN TABLE VIEW */}
+      <div className="admins-content-table-view">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              {(activeTab === 'active' ? activeAdminListColumns : deactivatedAdminListColumns).map(col => (
+                <th key={col.key}>{col.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(activeTab === 'active'
+              ? activeAdmins.map((admin, i) => renderAdminListRow(admin, i, false))
+              : deactivatedAdmins.map((admin, i) => renderAdminListRow(admin, i, true))
+            )}
+            {(activeTab === 'active' ? activeAdmins : deactivatedAdmins).length === 0 && (
+              <tr>
+                <td colSpan={(activeTab === 'active' ? activeAdminListColumns.length : deactivatedAdminListColumns.length)} style={{ textAlign: 'center', fontWeight: 500 }}>
+                  No admins found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* ADD ADMIN MODAL */}
@@ -343,10 +363,29 @@ const AdminManagement = () => {
       {showViewAdminModal && selectedAdmin && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <ViewAdmin admin={selectedAdmin} onClose={() => setShowViewAdminModal(false)} onStatusChange={handleAdminStatusChange} />
+            <ViewAdmin
+              admin={selectedAdmin}
+              onClose={() => setShowViewAdminModal(false)}
+              onStatusChange={handleAdminStatusChange}
+              onProfileUpdate={handleProfileUpdate}
+            />
           </div>
         </div>
       )}
+
+      {/* Confirm Alert Modal */}
+      <ConfirmAlert
+        open={confirmAlert.open}
+        title={confirmAlert.title}
+        message={confirmAlert.message}
+        type={confirmAlert.type}
+        confirmText={confirmAlert.confirmText}
+        cancelText={confirmAlert.cancelText}
+        onConfirm={() => {
+          if (confirmAlert.onConfirm) confirmAlert.onConfirm();
+        }}
+        onCancel={() => setConfirmAlert({ ...confirmAlert, open: false })}
+      />
     </div>
   );
 };

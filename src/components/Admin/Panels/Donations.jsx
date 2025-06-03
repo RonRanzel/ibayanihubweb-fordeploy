@@ -1,8 +1,10 @@
 import { logAuditFrontend } from '../../logAuditFrontend';
 import React, { useEffect, useState } from "react";
-import searchIcon from "../../Assets/search_icon.png";
+import searchIcon from "../../Assets/searchicon.svg";
 import profIcon from "../../Assets/user_icon.png";
+import dlIcon from "../../Assets/downloadicon.svg";
 import axios from 'axios';
+import '../../Styles/sDonation.css';
 
 const Donations = () => {
     const [dateTime, setDateTime] = useState(new Date());
@@ -97,44 +99,51 @@ const Donations = () => {
     return (
         <div style={{ padding: 24, background: '#f4f4f4', minHeight: '100vh' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-                <div style={{ background: '#fff', borderRadius: 8, padding: '12px 24px', minWidth: 180, textAlign: 'center', fontWeight: 700, color: '#CB1E2A', fontSize: 18 }}>
-                    {dateTime.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}<br />
-                    <span style={{ color: '#222', fontWeight: 400, fontSize: 16 }}>{dateTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+            <div className="dashb-header">
+                <div className="dashb-header-left">
+                    <div className="dashb-date-time-box">
+                        <div className="dashb-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div className="dashb-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+                    </div>
                 </div>
-                <div style={{ flex: 1, background: '#fff', borderRadius: 8, padding: '12px 0', textAlign: 'center', fontWeight: 700, fontSize: 28, letterSpacing: 1 }}>
-                    <span style={{ color: '#CB1E2A' }}>Donation</span> Management
-                </div>
-                <div style={{ background: '#fff', borderRadius: 8, padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 220 }}>
-                    <img src={profIcon} alt="Profile" style={{ width: 48, height: 48, borderRadius: '50%' }} />
-                    <div>
-                        <div style={{ fontWeight: 700, color: '#CB1E2A' }}>{loggedInAdmin ? `${loggedInAdmin.admin_firstName} ${loggedInAdmin.admin_lastName}` : '—'}</div>
-                        <div style={{ fontSize: 13, color: '#555' }}>{loggedInAdmin ? loggedInAdmin.admin_email : ''}</div>
+                <div className="dashb-title-main">Donation Management</div>
+                <div className="dashb-header-right">
+                    <div className="dashb-admin-profile">
+                        <img src={profIcon} alt="User" className="dashb-admin-img" />
+                        <div className="dashb-admin-details">
+                            <span className="dashb-admin-name">
+                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
+                            </span>
+                            <span className="dashb-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                        </div>
                     </div>
                 </div>
             </div>
             {/* Tabs, Search, Download */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setActiveTab('accepted')} style={{ background: activeTab === 'accepted' ? '#CB1E2A' : '#fff', color: activeTab === 'accepted' ? '#fff' : '#CB1E2A', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: 15, boxShadow: activeTab === 'accepted' ? '0 2px 8px #cb1e2a22' : 'none' }}>Accepted Transactions</button>
-                    <button onClick={() => setActiveTab('requests')} style={{ background: activeTab === 'requests' ? '#CB1E2A' : '#fff', color: activeTab === 'requests' ? '#fff' : '#CB1E2A', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: 15, boxShadow: activeTab === 'requests' ? '0 2px 8px #cb1e2a22' : 'none' }}>Transaction Requests</button>
+            <div className="donate-top-bar">
+                <div className="donate-tabs">
+                    <button className={activeTab === 'accepted' ? 'donate-tab-btn donate-active-tab' : 'donate-tab-btn'} onClick={() => setActiveTab('accepted')}>Monitor Transactions</button>
+                    <button className={activeTab === 'requests' ? 'donate-tab-btn donate-active-tab' : 'donate-tab-btn'} onClick={() => setActiveTab('requests')}>Transaction Requests</button>
                 </div>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
-                    <div style={{ background: '#fff', borderRadius: 8, display: 'flex', alignItems: 'center', padding: '0 12px', height: 40, minWidth: 220 }}>
-                        <img src={searchIcon} alt="Search" style={{ width: 18, height: 18, marginRight: 8 }} />
-                        <input type="text" placeholder="Search" style={{ border: 'none', outline: 'none', fontSize: 15, background: 'transparent', flex: 1 }} />
+                <div className="donate-search-container">
+                    <div className="donate-searchbar">
+                        <img src={searchIcon} alt="Search" className="donate-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search by name, username, event title, or program..."
+                            // value={searchTerm}
+                            // onChange={(e) => setSearchTerm(e.target.value)}
+                            className="donate-search-input"
+                        />
                     </div>
-                    <button style={{ background: '#fff', border: 'none', borderRadius: 8, padding: 8 }}>
-                        <span role="img" aria-label="Filter">🔽</span>
-                    </button>
-                    <button style={{ background: '#CB1E2A', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8 }} onClick={handleDownloadDonations}>
-                        <span role="img" aria-label="Download">⬇️</span> Download
+                    <button className="donate-download-button" onClick={handleDownloadDonations}>
+                        <img src={dlIcon} alt="Download" />
+                        <span>Download</span>
                     </button>
                 </div>
             </div>
             {/* Table */}
             <div style={{ background: '#fff', borderRadius: 10, padding: 20, marginTop: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 12 }}>Donations</div>
                 {loading ? <p>Loading...</p> : (
                 <table className="users-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
