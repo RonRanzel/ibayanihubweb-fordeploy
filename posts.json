@@ -1,0 +1,26 @@
+﻿
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : [{"flagged":false,"_id":"6840a544129afb9564f7ee1c","title":"cjcj","content":"gicci\n","us
+                    er":"Ron Ranzel Clarin","username":"RonClarin","likes":["RonClarin"],"media":"https://iba
+                    yanihubstorage.s3.ap-s...
+RawContent        : HTTP/1.1 200 OK
+                    Transfer-Encoding: chunked
+                    Connection: keep-alive
+                    access-control-allow-origin: *
+                    rndr-id: 92f80fcf-c3ba-4d16
+                    vary: Accept-Encoding
+                    x-render-origin-server: Render
+                    cf-cache-status...
+Forms             : {}
+Headers           : {[Transfer-Encoding, chunked], [Connection, keep-alive], [access-control-allow-origin, 
+                    *], [rndr-id, 92f80fcf-c3ba-4d16]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : mshtml.HTMLDocumentClass
+RawContentLength  : 3326
+
+
+

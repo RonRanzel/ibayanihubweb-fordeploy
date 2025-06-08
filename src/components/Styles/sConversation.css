@@ -362,3 +362,19 @@
   background: #CB1E2A;
   color: #fff;
 }
+
+.chat-timestamp {
+  font-size: 13px;
+  color: #888;
+  margin-top: 6px;
+  text-align: right;
+  font-family: 'Poppins-Reg', Arial, sans-serif;
+  opacity: 0.85;
+  letter-spacing: 0.1px;
+}
+
+/* Make timestamp white for admin (sending) bubbles */
+.chat-bubble.admin .chat-timestamp {
+  color: #fff;
+  opacity: 0.9;
+}

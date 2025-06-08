@@ -160,6 +160,35 @@ const Conversation = () => {
       [groupId]: new Date(msg.createdAt || msg.timestamp || Date.now()).getTime()
     }));
 
+    // --- Helper for formatting timestamp ---
+    const formatTimestamp = (ts) => {
+        if (!ts) return "";
+        const dt = typeof ts === "string" ? new Date(ts) : new Date(ts);
+        if (isNaN(dt.getTime())) return "";
+        const now = new Date();
+        // Today
+        if (
+            dt.getDate() === now.getDate() &&
+            dt.getMonth() === now.getMonth() &&
+            dt.getFullYear() === now.getFullYear()
+        ) {
+            return dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+        // Yesterday
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        if (
+            dt.getDate() === yesterday.getDate() &&
+            dt.getMonth() === yesterday.getMonth() &&
+            dt.getFullYear() === yesterday.getFullYear()
+        ) {
+            return `Yesterday, ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+        }
+        // Else, show full date
+        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + 
+            ', ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
+
     const handleSendMessage = () => {
         if (!message.trim() || !selectedUser) return;
         const roomId = generateRoomId(selectedUser.username);
@@ -392,6 +421,7 @@ const Conversation = () => {
                                         <div key={idx} className="chat-bubble admin">
                                             <div className={`sender-name ${msg.sender === currentAdminUsername ? "sender-admin" : "sender-other"}`}>{msg.sender}</div>
                                             <span>{msg.content}</span>
+                                            <div className="chat-timestamp">{formatTimestamp(msg.createdAt || msg.timestamp)}</div>
                                         </div>
                                     ))}
                                     <div ref={messagesEndRef} />
@@ -438,6 +468,7 @@ const Conversation = () => {
                                                             : "sender-user"
                                                 }`}>{displayName}</div>
                                                 <span>{msg.content}</span>
+                                                <div className="chat-timestamp">{formatTimestamp(msg.createdAt || msg.timestamp)}</div>
                                             </div>
                                         );
                                     })}

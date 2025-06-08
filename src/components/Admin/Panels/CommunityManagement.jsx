@@ -26,6 +26,8 @@ const CommunityManagement = () => {
     const [editAnnouncement, setEditAnnouncement] = useState(null);
     const [editAnnouncementImagePreview, setEditAnnouncementImagePreview] = useState(null);
     const [editAnnouncementMessage, setEditAnnouncementMessage] = useState('');
+    const [flaggedPosts, setFlaggedPosts] = useState([]);
+    const [flaggedComments, setFlaggedComments] = useState([]);
 
     useEffect(() => {
         const timer = setInterval(() => setDateTime(new Date()), 1000);
@@ -50,8 +52,22 @@ const CommunityManagement = () => {
             .catch(err => console.log("Error fetching announcements:", err));
     };
 
+    const fetchFlaggedPosts = () => {
+        axios.get(`${API_BASE}/flagged-posts`)
+            .then(res => setFlaggedPosts(res.data))
+            .catch(err => console.log("Error fetching flagged posts:", err));
+    };
+
+    const fetchFlaggedComments = () => {
+        axios.get(`${API_BASE}/flagged-comments`)
+            .then(res => setFlaggedComments(res.data))
+            .catch(err => console.log("Error fetching flagged comments:", err));
+    };
+
     useEffect(() => {
         fetchPostsAndAnnouncements();
+        fetchFlaggedPosts();
+        fetchFlaggedComments();
     }, []);
 
     const formatDate = (date) => date && (new Date(date)).toLocaleDateString("en-US", {
@@ -97,6 +113,7 @@ const CommunityManagement = () => {
                         platform: 'web'
                     });
                     fetchPostsAndAnnouncements();
+                    fetchFlaggedPosts(); // <-- Ensure flagged posts list updates immediately
                     setMessage("✅ Post deleted successfully!");
                     setShowPostModal(false);
                 })
@@ -210,6 +227,28 @@ const CommunityManagement = () => {
             });
     };
 
+    const handleUnflagPost = (postId) => {
+        axios.put(`${API_BASE}/posts/${postId}`, { flagged: false })
+            .then(() => {
+                fetchFlaggedPosts();
+                fetchPostsAndAnnouncements();
+                setMessage("✅ Post retained and unflagged.");
+            })
+            .catch(() => setMessage("❌ Failed to unflag post."));
+    };
+
+    const handleAdminDeleteComment = (postId, commentIndex) => {
+        if (window.confirm("Are you sure you want to delete this comment?")) {
+            axios.post(`${API_BASE}/posts/admin-delete-comment`, { postId, commentIndex })
+                .then(() => {
+                    setMessage("✅ Comment deleted successfully!");
+                    fetchFlaggedComments();
+                    fetchPostsAndAnnouncements();
+                })
+                .catch(() => setMessage("❌ Failed to delete comment."));
+        }
+    };
+
     // Helper for correct profile picture URL (force https)
     const getProfilePictureUrl = (profilePicture) => {
         if (!profilePicture) return profIcon;
@@ -271,6 +310,7 @@ const CommunityManagement = () => {
                 <div className="community-tabs">
                     <button className={activeTab === 'posts' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('posts')}>Community Posts</button>
                     <button className={activeTab === 'announcements' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('announcements')}>Announcements</button>
+                    <button className={activeTab === 'flagged' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('flagged')}>Flagged Posts</button>
                 </div>
                 <div className="community-search-container">
                     <div className="community-searchbar">
@@ -292,7 +332,80 @@ const CommunityManagement = () => {
             </div>
             <div className="community-list-view">
                 <div className="community-table-scroll">
-                    {activeTab === "posts" ? (
+                    {activeTab === "flagged" ? (
+                        <>
+                        <table className="community-table">
+                            <thead>
+                                <tr>
+                                    <th>Profile Picture</th>
+                                    <th>Posted By</th>
+                                    <th>Date Posted</th>
+                                    <th>Title</th>
+                                    <th>Content</th>
+                                    <th>Hearts</th>
+                                    <th>Comments</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {flaggedPosts.map((post) => (
+                                    <tr key={post._id} style={{ background: '#ffeaea' }}>
+                                        <td>
+                                            <img
+                                                src={getProfilePictureUrl(post.profilePicture)}
+                                                alt="avatar"
+                                                className="community-profile-img"
+                                            />
+                                        </td>
+                                        <td>
+                                            <span className="full-name">{post.user}</span>
+                                            <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
+                                        </td>
+                                        <td>{formatDate(post.createdAt)} {formatTime(post.createdAt)}</td>
+                                        <td>{post.title}</td>
+                                        <td className="content-cell">{post.content}</td>
+                                        <td>{typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}</td>
+                                        <td>{typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}</td>
+                                        <td>
+                                            <button className="community-delete-btn" onClick={() => handleDeletePost(post._id)} style={{ marginRight: 8 }}>Delete</button>
+                                            <button className="community-view-btn" onClick={() => handleUnflagPost(post._id)}>Retain</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {/* Flagged Comments Table */}
+                        <h3 style={{marginTop:32, marginBottom:8, color:'#CB1E2A'}}>Flagged Comments</h3>
+                        <table className="community-table">
+                            <thead>
+                                <tr>
+                                    <th>Comment</th>
+                                    <th>Commented By</th>
+                                    <th>Post Title</th>
+                                    <th>Post Author</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {flaggedComments.length === 0 ? (
+                                    <tr><td colSpan={6} style={{textAlign:'center',color:'#888'}}>No flagged comments</td></tr>
+                                ) : flaggedComments.map((fc, idx) => (
+                                    <tr key={idx} style={{ background: '#fff3f3' }}>
+                                        <td>{fc.comment.text}</td>
+                                        <td>{fc.comment.fullName || fc.comment.username}</td>
+                                        <td>{fc.postTitle}</td>
+                                        <td>{fc.postUser}</td>
+                                        <td>{fc.comment.createdAt ? formatDate(fc.comment.createdAt) : ''}</td>
+                                        <td>
+                                            <button className="community-delete-btn" onClick={() => handleAdminDeleteComment(fc.postId, fc.commentIndex)}>Delete</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        </>
+                    ) : (
                         <table className="community-table">
                             <thead>
                                 <tr>
@@ -308,100 +421,86 @@ const CommunityManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredPosts.map((post) => (
-                                    <tr key={post._id}>
-                                        <td>
-                                            <img
-                                                src={getProfilePictureUrl(post.profilePicture)}
-                                                alt="avatar"
-                                                className="community-profile-img"
-                                            />
-                                        </td>
-                                        <td>
-                                            <span className="full-name">{post.user}</span>
-                                            <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
-                                        </td>
-                                        <td>
-                                            {formatDate(post.createdAt)} {formatTime(post.createdAt)}
-                                        </td>
-                                        <td>{post.title}</td>
-                                        <td className="content-cell">{post.content}</td>
-                                        <td>
-                                            {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
-                                        </td>
-                                        <td>
-                                            {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
-                                        </td>
-                                        <td>
-                                            {typeof post.reports === "number"
-                                                ? post.reports
-                                                : (post.reports && post.reports.length
-                                                    ? post.reports.length
-                                                    : 0)}
-                                        </td>
-                                        <td>
-                                            <button
-                                                className="community-view-btn"
-                                                onClick={() => handleViewPost(post)}
-                                                tabIndex={0}
-                                            >
-                                                View Post
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <table className="community-table">
-                            <thead>
-                                <tr>
-                                    <th>Profile Picture</th>
-                                    <th>Posted By</th>
-                                    <th>Date Posted</th>
-                                    <th>Title</th>
-                                    <th>Content</th>
-                                    <th>Hearts</th>
-                                    <th>Comments</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredAnnouncements.map((post) => (
-                                    <tr key={post._id}>
-                                        <td>
-                                            <img
-                                                src={getProfilePictureUrl(post.profilePicture)}
-                                                alt="avatar"
-                                                className="community-profile-img"
-                                            />
-                                        </td>
-                                        <td>
-                                            <span className="full-name">{post.user}</span>
-                                            <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
-                                        </td>
-                                        <td>
-                                            {formatDate(post.createdAt)} {formatTime(post.createdAt)}
-                                        </td>
-                                        <td>{post.title}</td>
-                                        <td className="content-cell">{post.content}</td>
-                                        <td>
-                                            {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
-                                        </td>
-                                        <td>
-                                            {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
-                                        </td>
-                                        <td>
-                                            <button
-                                                className="community-view-btn"
-                                                onClick={() => handleViewPost(post)}
-                                                tabIndex={0}
-                                            >
-                                                View Post
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {activeTab === "posts" ? (
+                                    filteredPosts.map((post) => (
+                                        <tr key={post._id}>
+                                            <td>
+                                                <img
+                                                    src={getProfilePictureUrl(post.profilePicture)}
+                                                    alt="avatar"
+                                                    className="community-profile-img"
+                                                />
+                                            </td>
+                                            <td>
+                                                <span className="full-name">{post.user}</span>
+                                                <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
+                                            </td>
+                                            <td>
+                                                {formatDate(post.createdAt)} {formatTime(post.createdAt)}
+                                            </td>
+                                            <td>{post.title}</td>
+                                            <td className="content-cell">{post.content}</td>
+                                            <td>
+                                                {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
+                                            </td>
+                                            <td>
+                                                {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
+                                            </td>
+                                            <td>
+                                                {typeof post.reports === "number"
+                                                    ? post.reports
+                                                    : (post.reports && post.reports.length
+                                                        ? post.reports.length
+                                                        : 0)}
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="community-view-btn"
+                                                    onClick={() => handleViewPost(post)}
+                                                    tabIndex={0}
+                                                >
+                                                    View Post
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    filteredAnnouncements.map((post) => (
+                                        <tr key={post._id}>
+                                            <td>
+                                                <img
+                                                    src={getProfilePictureUrl(post.profilePicture)}
+                                                    alt="avatar"
+                                                    className="community-profile-img"
+                                                />
+                                            </td>
+                                            <td>
+                                                <span className="full-name">{post.user}</span>
+                                                <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
+                                            </td>
+                                            <td>
+                                                {formatDate(post.createdAt)} {formatTime(post.createdAt)}
+                                            </td>
+                                            <td>{post.title}</td>
+                                            <td className="content-cell">{post.content}</td>
+                                            <td>
+                                                {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
+                                            </td>
+                                            <td>
+                                                {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="community-view-btn"
+                                                    onClick={() => handleViewPost(post)}
+                                                    tabIndex={0}
+                                                >
+                                                    View Post
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     )}

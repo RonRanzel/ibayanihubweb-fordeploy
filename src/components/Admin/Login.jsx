@@ -19,7 +19,7 @@ function validateEmailFormat(email) {
 const sliderImages = [LeftBg1, LeftBg2, LeftBg3, LeftBg4, LeftBg5];
 
 const LOCKOUT_THRESHOLD = 5;
-const LOCKOUT_DURATION = 2 * 60 * 1000; // 2 minutes in ms
+const LOCKOUT_DURATION = 60 * 1000; // 60 seconds in ms
 
 const getLockoutInfo = () => {
     // Read from localStorage, fallback to defaults
@@ -287,7 +287,7 @@ const Login = () => {
                                     disabled={lockout.locked}
                                     autoComplete="current-password"
                                 />
-                                <img src={showPassword ? Hide : Show} alt="Error Icon" id="pass-icon" onClick={togglePassword}/>
+                                <img src={showPassword ? Hide : Show} alt="Error Icon"s id="pass-icon" onClick={togglePassword}/>
                             </div>
                             {errors.password && <div className="input-error-text">{errors.password}</div>}
                         </div>
