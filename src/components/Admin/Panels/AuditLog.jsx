@@ -5,6 +5,7 @@ import searchIcon from "../../Assets/searchicon.svg";
 import dlIcon from "../../Assets/downloadicon.svg";
 import profIcon from "../../Assets/user_icon.png";
 import '../../Styles/sAudit.css';
+import '../../Styles/sHeader.css';
 
 const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api";
 const API_BASE = "https://ibayanihub-backend.onrender.com/api";
@@ -98,26 +99,26 @@ const AuditLog = () => {
 
   return (
     <div id="auditlog-container">
-      <div className="auditlog-header">
-        <div className="auditlog-header-left">
-          <div className="auditlog-date-time-box">
-            <div className="auditlog-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-            <div className="auditlog-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
-          </div>
-        </div>
-        <div className="auditlog-title-main">Audit Log</div>
-        <div className="auditlog-header-right">
-          <div className="auditlog-admin-profile">
-            <img src={profIcon} alt="User" className="auditlog-admin-img" />
-            <div className="auditlog-admin-details">
-              <span className="auditlog-admin-name">
-                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
-              </span>
-              <span className="auditlog-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+            <div className="header">
+                <div className="header-left">
+                    <div className="header-cTitle">
+                        <p className="header-title">Audit Log</p>
+                    </div>
+                    <div className="header-cDateTime">
+                        <p className="header-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="header-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</p>
+                    </div>
+                </div>
+                <div className="header-right">
+                    <div className="header-cProf">
+                        <img src={profIcon} alt="User" className="header-img" />
+                        <div className="header-cName">
+                            <p className="header-name">{loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}</p>
+                            <p className="header-email">{loggedInAdmin?.admin_email || ''}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
       <div className="auditlog-top-bar">
         <div className="auditlog-tabs">
           <button className={activeTab === 'user' ? 'auditlog-tab-btn auditlog-active-tab' : 'auditlog-tab-btn'} onClick={() => setActiveTab('user')}>User Logs</button>

@@ -8,7 +8,9 @@ import volunteerIcon from "../../Assets/volunteericon.svg";
 import donationIcon from "../../Assets/donationicon.svg";
 import announcementIcon from "../../Assets/communityicon.svg";
 import "../../Styles/sDashboard.css";
+import "../../Styles/sHeader.css";
 import { logAuditFrontend } from '../../logAuditFrontend';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 // Utility for calendar
 function getMonthMatrix(year, month) {
@@ -37,6 +39,8 @@ const API_BASE = "https://ibayanihubweb-backend.onrender.com";
 const MOBILE_API_BASE = "https://ibayanihub-backend.onrender.com";
 const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api";
 
+const COLORS = ['#A18AFF', '#FF8A8A', '#4DD0E1', '#FFD36E', '#CB1E2A'];
+
 const Dashboard = ({ setActiveSection }) => {
     const [dateTime, setDateTime] = useState(new Date());
     const [users, setUsers] = useState([]);
@@ -50,6 +54,9 @@ const Dashboard = ({ setActiveSection }) => {
     const [donations, setDonations] = useState([]);
     const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
     const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+    // In-Kind Analytics
+    const [inKindDonations, setInKindDonations] = useState([]);
+    const [acceptedInKindDonations, setAcceptedInKindDonations] = useState([]);
 
     useEffect(() => {
         axios.get(`${API_BASE}/api/getUsers`).then(res => setUsers(res.data));
@@ -63,6 +70,12 @@ const Dashboard = ({ setActiveSection }) => {
             .then(res => res.json())
             .then(data => setDonations(data))
             .catch(() => {});
+        fetch('https://ibayanihub-backend.onrender.com/api/in-kind-donations')
+            .then(res => res.json())
+            .then(data => setInKindDonations(Array.isArray(data) ? data : []));
+        fetch('https://ibayanihub-backend.onrender.com/api/in-kind-donations/accepted')
+            .then(res => res.json())
+            .then(data => setAcceptedInKindDonations(Array.isArray(data) ? data : []));
     }, []);
     useEffect(() => {
         const email = localStorage.getItem('adminEmail');
@@ -83,6 +96,37 @@ const Dashboard = ({ setActiveSection }) => {
             platform: 'web'
         });
     }, []);
+
+    // --- Analytics Data Aggregation ---
+    // Pie data by item type (particulars)
+    const inKindTypeMap = {};
+    let inKindTotalValue = 0;
+    let pickUpCount = 0, dropOffCount = 0;
+    acceptedInKindDonations.forEach(d => {
+        inKindTypeMap[d.particulars] = (inKindTypeMap[d.particulars] || 0) + d.total;
+        inKindTotalValue += d.total;
+        if (d.via?.toLowerCase().includes('pick')) pickUpCount++;
+        if (d.via?.toLowerCase().includes('drop')) dropOffCount++;
+    });
+    const inKindPieData = Object.keys(inKindTypeMap).map((type, i) => ({
+        name: type,
+        value: inKindTypeMap[type],
+        color: COLORS[i % COLORS.length]
+    }));
+    const totalVia = pickUpCount + dropOffCount;
+
+    // Cash Analytics
+    const acceptedCashDonations = donations.filter(d => d.status === 'accepted');
+    const fraudCashDonations = donations.filter(d => d.status === 'rejected');
+    const cashTotal = acceptedCashDonations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    const fraudTotal = fraudCashDonations.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+    // Line chart: group by date
+    const cashByDate = {};
+    acceptedCashDonations.forEach(d => {
+        const date = new Date(d.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        cashByDate[date] = (cashByDate[date] || 0) + (Number(d.amount) || 0);
+    });
+    const cashLineData = Object.keys(cashByDate).map(date => ({ date, amount: cashByDate[date] }));
 
     // Stats
     const now = new Date();
@@ -136,22 +180,22 @@ const Dashboard = ({ setActiveSection }) => {
     return (
         <div className="dashboard-main">
             {/* Header - do not change! */}
-            <div className="dashb-header">
-                <div className="dashb-header-left">
-                    <div className="dashb-date-time-box">
-                        <div className="dashb-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                        <div className="dashb-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+            <div className="header">
+                <div className="header-left">
+                    <div className="header-cTitle">
+                        <p className="header-title">Dashboard</p>
+                    </div>
+                    <div className="header-cDateTime">
+                        <p className="header-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="header-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</p>
                     </div>
                 </div>
-                <div className="dashb-title-main">Dashboard</div>
-                <div className="dashb-header-right">
-                    <div className="dashb-admin-profile">
-                        <img src={profIcon} alt="User" className="dashb-admin-img" />
-                        <div className="dashb-admin-details">
-                            <span className="dashb-admin-name">
-                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
-                            </span>
-                            <span className="dashb-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                <div className="header-right">
+                    <div className="header-cProf">
+                        <img src={profIcon} alt="User" className="header-img" />
+                        <div className="header-cName">
+                            <p className="header-name">{loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}</p>
+                            <p className="header-email">{loggedInAdmin?.admin_email || ''}</p>
                         </div>
                     </div>
                 </div>
@@ -361,6 +405,73 @@ const Dashboard = ({ setActiveSection }) => {
                             )}
                         </div>
                     </div>
+                </div>
+                <div className="dashboard-cards-row">
+                  {/* Donation Analytics Card */}
+                  <div className="dashboard-card modern-card" style={{ minWidth: 340, maxWidth: 420 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                      <img src={donationIcon} alt="Donations" style={{ width: 32, height: 32 }} />
+                      <span style={{ fontWeight: 700, fontSize: 18 }}>Donation Management</span>
+                    </div>
+                    {/* In-Kind Analytics */}
+                    <div style={{ border: '1px solid #eee', borderRadius: 12, padding: 12, marginBottom: 18 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 6 }}>In-Kind Donation</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                        <ResponsiveContainer width={140} height={140}>
+                          <PieChart>
+                            <Pie data={inKindPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={38} outerRadius={60} label>
+                              {inKindPieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                            </Pie>
+                            <Tooltip />
+                            <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, color: '#888' }}>Total Value Donated</div>
+                          <div style={{ fontWeight: 700, fontSize: 24, color: '#CB1E2A', marginBottom: 8 }}>{inKindTotalValue.toLocaleString()} ₱</div>
+                          <div style={{ fontSize: 13, color: '#888' }}>Total Via Pick Up & Drop Off</div>
+                          <div style={{ fontWeight: 700, fontSize: 22, color: '#CB1E2A' }}>{totalVia}</div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Cash Analytics */}
+                    <div style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 6 }}>Cash Donation</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                        <ResponsiveContainer width={140} height={140}>
+                          <PieChart>
+                            <Pie data={[
+                              { name: 'Real', value: cashTotal, color: COLORS[0] },
+                              { name: 'Fraud', value: fraudTotal, color: COLORS[1] }
+                            ]} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={38} outerRadius={60} label>
+                              <Cell fill={COLORS[0]} />
+                              <Cell fill={COLORS[1]} />
+                            </Pie>
+                            <Tooltip />
+                            <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, color: '#888' }}>Total Amount Donated</div>
+                          <div style={{ fontWeight: 700, fontSize: 24, color: '#CB1E2A', marginBottom: 8 }}>{cashTotal.toLocaleString()} ₱</div>
+                          <div style={{ fontSize: 13, color: '#888' }}>Fraud Receipt Transaction</div>
+                          <div style={{ fontWeight: 700, fontSize: 22, color: '#CB1E2A' }}>{fraudTotal.toLocaleString()} ₱</div>
+                        </div>
+                      </div>
+                      {/* Line Chart for Cash Donations */}
+                      <div style={{ marginTop: 18 }}>
+                        <ResponsiveContainer width="100%" height={80}>
+                          <LineChart data={cashLineData} margin={{ left: -18, right: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" fontSize={10} />
+                            <YAxis fontSize={10} />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="amount" stroke="#CB1E2A" strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
                 </div>
             </div>
         </div>

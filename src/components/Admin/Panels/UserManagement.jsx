@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from 'axios';
 import "../../Styles/sUsers.css";
+import "../../Styles/sHeader.css";
 import searchIcon from "../../Assets/searchicon.svg";
 import profIcon from "../../Assets/user_icon.png";
 import addUserIcon from "../../Assets/addicon.svg";
@@ -8,8 +9,7 @@ import dlIcon from "../../Assets/downloadicon.svg";
 import filterIcon from "../../Assets/filtericon.svg";
 import AddUser from "./Modal/AddUser";
 import ViewUserModal from "./Modal/ViewUser";
-import ConfirmAlert from "./Modal/ConfirmAlert";
-import Alert from "./Modal/Alert"; // <-- Import your Alert component
+import Alert from "./Modal/Alert";
 import { logAuditFrontend } from '../../logAuditFrontend';
 
 const API_BASE = "https://ibayanihubweb-backend.onrender.com";
@@ -25,8 +25,10 @@ const UserManagement = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [loggedInAdmin, setLoggedInAdmin] = useState(null);
     const [activeTab, setActiveTab] = useState('active');
-    const [confirmAlert, setConfirmAlert] = useState({ open: false, type: "warning", message: "", onConfirm: null });
-    const [alertProps, setAlertProps] = useState({ open: false, message: "", type: "success", title: "" }); // <-- Alert state
+    const [alertProps, setAlertProps] = useState({ open: false, message: "", type: "success", title: "" });
+    const [sortOrder, setSortOrder] = useState("newest"); // "newest" or "oldest"
+    const [showSortDropdown, setShowSortDropdown] = useState(false);
+    const filterDropdownRef = useRef(null);
 
     useEffect(() => {
         axios.get(`${API_BASE}/api/getUsers`)
@@ -67,6 +69,7 @@ const UserManagement = () => {
 
     const parishOptions = [...new Set(users.map(user => user.parish).filter(p => p))];
 
+    // Search + filter + sort
     const filteredUsers = users.filter(user => {
         const fullName = `${user.firstName || ''} ${user.middleName || ''} ${user.lastName || ''}`.toLowerCase();
         const searchMatch =
@@ -83,63 +86,54 @@ const UserManagement = () => {
         return searchMatch && statusMatch && parishMatch;
     });
 
-    const activeUsers = users.filter(user => !user.isDeactivated);
-    const deactivatedUsers = users.filter(user => user.isDeactivated);
+    // Sort filteredUsers by createdAt
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
+        const dateA = new Date(a.createdAt);
+        const dateB = new Date(b.createdAt);
+        return sortOrder === "newest"
+            ? dateB - dateA
+            : dateA - dateB;
+    });
 
+    // Tabs filter after sort (active/deactivated)
+    const activeUsers = sortedUsers.filter(user => !user.isDeactivated);
+    const deactivatedUsers = sortedUsers.filter(user => user.isDeactivated);
+
+    // Only API call and alert here, NOT confirmation
     const handleUserStatusChange = (userId, deactivate) => {
-        setConfirmAlert({
-            open: true,
-            type: deactivate ? "warning" : "success",
-            title: deactivate ? "Deactivate User" : "Reactivate User",
-            message: deactivate
-                ? "Are you sure you want to deactivate this user? They will lose access to the platform."
-                : "Are you sure you want to reactivate this user? They will regain access to the platform.",
-            confirmText: deactivate ? "Deactivate" : "Reactivate",
-            cancelText: "Cancel",
-            onConfirm: () => {
-                const url = deactivate ? `${API_BASE}/api/deactivate` : `${API_BASE}/api/reactivate`;
-                axios.post(url, { userId })
-                    .then(() => {
-                        logAuditFrontend({
-                            userId: localStorage.getItem('adminEmail') || 'unknown',
-                            userType: 'admin',
-                            action: deactivate ? 'Deactivate User' : 'Reactivate User',
-                            details: `${deactivate ? 'Deactivated' : 'Reactivated'} user with ID: ${userId}`,
-                            platform: 'web'
-                        });
-                        axios.get(`${API_BASE}/api/getUsers`).then((response) => setUsers(response.data));
-                        setShowViewUserModal(false);
-                        setConfirmAlert({ ...confirmAlert, open: false });
-
-                        // CUSTOM ALERT HERE
-                        setAlertProps({
-                            open: true,
-                            message: deactivate ? "Account Deactivated" : "Account Reactivated",
-                            type: "success",
-                            title: "Success"
-                        });
-                    })
-                    .catch((error) => {
-                        let msg = 'Failed to update user status';
-                        if (error.response && error.response.data && error.response.data.message) {
-                            msg += `: ${error.response.data.message}`;
-                        }
-                        setConfirmAlert({
-                            ...confirmAlert,
-                            open: true,
-                            type: "error",
-                            title: "Failed",
-                            message: msg,
-                            confirmText: "OK",
-                            cancelText: "",
-                            onConfirm: () => setConfirmAlert({ ...confirmAlert, open: false }),
-                        });
-                    });
-            }
-        });
+        const url = deactivate ? `${API_BASE}/api/deactivate` : `${API_BASE}/api/reactivate`;
+        axios.post(url, { userId })
+            .then(() => {
+                logAuditFrontend({
+                    userId: localStorage.getItem('adminEmail') || 'unknown',
+                    userType: 'admin',
+                    action: deactivate ? 'Deactivate User' : 'Reactivate User',
+                    details: `${deactivate ? 'Deactivated' : 'Reactivated'} user with ID: ${userId}`,
+                    platform: 'web'
+                });
+                axios.get(`${API_BASE}/api/getUsers`).then((response) => setUsers(response.data));
+                setShowViewUserModal(false);
+                setAlertProps({
+                    open: true,
+                    message: deactivate ? "Account Deactivated" : "Account Reactivated",
+                    type: "success",
+                    title: "Success"
+                });
+            })
+            .catch((error) => {
+                let msg = 'Failed to update user status';
+                if (error.response && error.response.data && error.response.data.message) {
+                    msg += `: ${error.response.data.message}`;
+                }
+                setAlertProps({
+                    open: true,
+                    title: "Failed",
+                    message: msg,
+                    type: "error"
+                });
+            });
     };
 
-    // Download users as CSV
     const handleDownloadUsers = () => {
         const data = (activeTab === 'active' ? activeUsers : deactivatedUsers);
         if (!data.length) return alert('No users to download.');
@@ -199,7 +193,6 @@ const UserManagement = () => {
         }
     }, [activeTab]);
 
-    // Set admin online status on mount/unmount (for user management panel)
     useEffect(() => {
         const email = localStorage.getItem('adminEmail');
         if (!email) return;
@@ -217,7 +210,6 @@ const UserManagement = () => {
         };
     }, []);
 
-    // Auto-close the alert after 3 seconds
     useEffect(() => {
         if (alertProps.open) {
             const timer = setTimeout(() => {
@@ -227,7 +219,21 @@ const UserManagement = () => {
         }
     }, [alertProps.open]);
 
-    // Columns for Active and Deactivated tabs
+    // Handle click outside filter dropdown to close it
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
+                setShowSortDropdown(false);
+            }
+        }
+        if (showSortDropdown) {
+            document.addEventListener("mousedown", handleClickOutside);
+        } else {
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showSortDropdown]);
+
     const activeUserListColumns = [
         { key: "fullName", label: "Name" },
         { key: "username", label: "Username" },
@@ -320,22 +326,22 @@ const UserManagement = () => {
 
     return (
         <div id="users-container">
-            <div className="dashb-header">
-                <div className="dashb-header-left">
-                    <div className="dashb-date-time-box">
-                        <div className="dashb-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                        <div className="dashb-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+            <div className="header">
+                <div className="header-left">
+                    <div className="header-cTitle">
+                        <p className="header-title">User Management</p>
+                    </div>
+                    <div className="header-cDateTime">
+                        <p className="header-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="header-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</p>
                     </div>
                 </div>
-                <div className="dashb-title-main">User Management</div>
-                <div className="dashb-header-right">
-                    <div className="dashb-admin-profile">
-                        <img src={profIcon} alt="User" className="dashb-admin-img" />
-                        <div className="dashb-admin-details">
-                            <span className="dashb-admin-name">
-                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
-                            </span>
-                            <span className="dashb-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                <div className="header-right">
+                    <div className="header-cProf">
+                        <img src={profIcon} alt="User" className="header-img" />
+                        <div className="header-cName">
+                            <p className="header-name">{loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}</p>
+                            <p className="header-email">{loggedInAdmin?.admin_email || ''}</p>
                         </div>
                     </div>
                 </div>
@@ -343,15 +349,17 @@ const UserManagement = () => {
 
             {/* TOP BAR */}
             <div className="users-top-bar">
-                <div className="users-tabs">
-                    <button className={activeTab === 'active' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('active')}> Active Users</button>
-                    <button className={activeTab === 'deactivated' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('deactivated')}>Deactivated Users</button>
-                </div>
-                <div className="users-search-container">
+                <div className="users-top-left">
+                    <div className="users-tabs">
+                        <button className={activeTab === 'active' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('active')}> Active Users</button>
+                        <button className={activeTab === 'deactivated' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('deactivated')}>Deactivated Users</button>
+                    </div>
                     <button className="users-add-button" onClick={() => setShowAddUserModal(true)}>
                         <img src={addUserIcon} alt="Add User" />
                         <span>Add User</span>
                     </button>
+                </div>
+                <div className="users-search-container">
                     <div className="users-searchbar">
                         <img src={searchIcon} alt="Search" className="users-search-icon" />
                         <input
@@ -362,8 +370,34 @@ const UserManagement = () => {
                             className="users-search-input"
                         />
                     </div>
-                    <div className="users-filter">
-                        <img src={filterIcon} className="users-filter-icon" />
+                    <div
+                        className="users-filter"
+                        ref={filterDropdownRef}
+                        style={{ position: "relative" }}
+                    >
+                        <img
+                            src={filterIcon}
+                            className="users-filter-icon"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => setShowSortDropdown(s => !s)}
+                            alt="Filter"
+                        />
+                        {showSortDropdown && (
+                            <div className="filter-dropdown">
+                                <div
+                                    className={`filter-dropdown-item${sortOrder === "newest" ? " selected" : ""}`}
+                                    onClick={() => { setSortOrder("newest"); setShowSortDropdown(false); }}
+                                >
+                                    Newest to Oldest
+                                </div>
+                                <div
+                                    className={`filter-dropdown-item${sortOrder === "oldest" ? " selected" : ""}`}
+                                    onClick={() => { setSortOrder("oldest"); setShowSortDropdown(false); }}
+                                >
+                                    Oldest to Newest
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <button className="users-download-button" onClick={handleDownloadUsers}>
                         <img src={dlIcon} alt="----" />
@@ -413,24 +447,14 @@ const UserManagement = () => {
             {showViewUserModal && selectedUser && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <ViewUserModal user={selectedUser} onClose={() => setShowViewUserModal(false)} onStatusChange={handleUserStatusChange} />
+                        <ViewUserModal
+                            user={selectedUser}
+                            onClose={() => setShowViewUserModal(false)}
+                            onStatusChange={handleUserStatusChange}
+                        />
                     </div>
                 </div>
             )}
-
-            {/* Confirm Alert */}
-            <ConfirmAlert
-                open={confirmAlert.open}
-                title={confirmAlert.title}
-                message={confirmAlert.message}
-                type={confirmAlert.type}
-                confirmText={confirmAlert.confirmText}
-                cancelText={confirmAlert.cancelText}
-                onConfirm={() => {
-                    if (confirmAlert.onConfirm) confirmAlert.onConfirm();
-                }}
-                onCancel={() => setConfirmAlert({ ...confirmAlert, open: false })}
-            />
 
             {/* Modern Success/Error Alert */}
             {alertProps.open && (

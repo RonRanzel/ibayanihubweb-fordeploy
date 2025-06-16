@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import axios from 'axios';
 import "../../Styles/sConversation.css";
+import "../../Styles/sHeader.css";
+import "../../Styles/sCreateGroupChat.css";
 import profIcon from "../../Assets/user_icon.png";
 import searchIcon from "../../Assets/searchicon.svg";
 import { logAuditFrontend } from '../../logAuditFrontend';
@@ -276,22 +278,22 @@ const Conversation = () => {
 
     return (
         <div id="users-container">
-            <div className="users-header">
-                <div className="users-header-left">
-                    <div className="users-date-time-box">
-                        <div className="users-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                        <div className="users-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+            <div className="header">
+                <div className="header-left">
+                    <div className="header-cTitle">
+                        <p className="header-title">Chats</p>
+                    </div>
+                    <div className="header-cDateTime">
+                        <p className="header-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="header-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</p>
                     </div>
                 </div>
-                <div className="users-title-main">Chats</div>
-                <div className="users-header-right">
-                    <div className="users-admin-profile">
-                        <img src={profIcon} alt="User" className="users-admin-img" />
-                        <div className="users-admin-details">
-                            <span className="users-admin-name">
-                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
-                            </span>
-                            <span className="users-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                <div className="header-right">
+                    <div className="header-cProf">
+                        <img src={profIcon} alt="User" className="header-img" />
+                        <div className="header-cName">
+                            <p className="header-name">{loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}</p>
+                            <p className="header-email">{loggedInAdmin?.admin_email || ''}</p>
                         </div>
                     </div>
                 </div>
@@ -333,34 +335,36 @@ const Conversation = () => {
                 <div className="user-list">
                     {activeTab === 'group' ? (
                         <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <h1 style={{ margin: 0 }}>Group Chat Conversation</h1>
-                                <button onClick={() => setShowCreateGroupModal(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#CB1E2A' }} title="Create Group Chat">
+                            <div className="convo-group-list-header">
+                                <h1>Group Chat Conversation</h1>
+                                <button className="create-group-btn" onClick={() => setShowCreateGroupModal(true)} title="Create Group Chat">
                                     <span role="img" aria-label="Create">✏️</span>
                                 </button>
                             </div>
                             {sortedGroupChats.length === 0 ? (
-                                <div style={{ color: '#888', textAlign: 'center', marginTop: 40 }}>No group chats yet. Click the ✏️ button to create one.</div>
+                                <div className="convo-group-empty">No group chats yet. Click the ✏️ button to create one.</div>
                             ) : (
                                 <div className="user-list-scroll" style={{ marginBottom: 16 }}>
                                     {sortedGroupChats.map(gc => (
-                                        <div key={gc._id} className={`user-item ${selectedGroup?._id === gc._id ? "selected" : ""}`} onClick={() => setSelectedGroup(gc)}>
-                                            {gc.name}
-                                            {unreadGroups.includes(gc._id) && (
-                                                <span className="chat-unread-dot" title="New message"></span>
-                                            )}
-                                            <button
-                                                style={{ marginLeft: 12, color: '#CB1E2A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}
-                                                onClick={async e => {
-                                                    e.stopPropagation();
-                                                    if (window.confirm('Delete this group chat?')) {
-                                                        await axios.delete(`${API_BASE}/api/groupchats/${gc._id}`);
-                                                        setGroupChats(groupChats.filter(g => g._id !== gc._id));
-                                                        if (selectedGroup && selectedGroup._id === gc._id) setSelectedGroup(null);
-                                                    }
-                                                }}
-                                                title="Delete Group Chat"
-                                            >🗑️</button>
+                                        <div key={gc._id} className={`user-item convo-group-item ${selectedGroup?._id === gc._id ? "selected" : ""}`} onClick={() => setSelectedGroup(gc)}>
+                                            <span className="convo-group-name">{gc.name}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                {unreadGroups.includes(gc._id) && (
+                                                    <span className="chat-unread-dot" title="New message"></span>
+                                                )}
+                                                <button
+                                                    className="convo-group-delete-btn"
+                                                    onClick={async e => {
+                                                        e.stopPropagation();
+                                                        if (window.confirm('Delete this group chat?')) {
+                                                            await axios.delete(`${API_BASE}/api/groupchats/${gc._id}`);
+                                                            setGroupChats(groupChats.filter(g => g._id !== gc._id));
+                                                            if (selectedGroup && selectedGroup._id === gc._id) setSelectedGroup(null);
+                                                        }
+                                                    }}
+                                                    title="Delete Group Chat"
+                                                >🗑️</button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -399,11 +403,11 @@ const Conversation = () => {
                     {activeTab === 'group' ? (
                         selectedGroup ? (
                             <>
-                                <div className="chat-header" style={{ background: '#CB1E2A', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <span style={{ fontWeight: 700, fontSize: 18 }}>{selectedGroup.name}</span>
-                                    {selectedGroup && selectedGroup.members && selectedGroup.members.includes(currentAdminUsername) && (
+                                <div className="chat-header convo-group-header">
+                                    <span className="convo-group-header-title">{selectedGroup.name}</span>
+                                    {selectedGroup?.members?.includes(currentAdminUsername) && (
                                         <button
-                                            style={{ background: '#fff', color: '#CB1E2A', border: '1px solid #CB1E2A', borderRadius: 8, padding: '4px 16px', fontWeight: 600, fontSize: 15, marginLeft: 12, cursor: 'pointer' }}
+                                            className="convo-group-leave-btn"
                                             onClick={async () => {
                                                 if (window.confirm('Are you sure you want to leave this group?')) {
                                                     try {
@@ -496,78 +500,64 @@ const Conversation = () => {
 
             {/* Modal for create group chat */}
             {showCreateGroupModal && (
-                <div className="modal-overlay" style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100vh',
-                    background: 'rgba(0,0,0,0.4)',
-                    zIndex: 1000,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden' // Prevent modal scroll
-                }}>
-                    <div className="modal-content" style={{
-                        background: '#fff',
-                        borderRadius: 12,
-                        padding: 32,
-                        minWidth: 400,
-                        maxWidth: 480,
-                        boxShadow: '0 4px 24px #0002',
-                        position: 'relative',
-                        overflow: 'visible', // No scroll inside modal
-                        maxHeight: 'none'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                            <h2 style={{ margin: 0, color: '#CB1E2A' }}>Create a <span style={{ color: '#222' }}>Group Chat</span></h2>
-                            <button onClick={() => setShowCreateGroupModal(false)} style={{ background: 'none', border: '2px solid #CB1E2A', borderRadius: 6, fontSize: 24, color: '#CB1E2A', cursor: 'pointer', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                <div className="group-modal-overlay">
+                    <div className="group-modal-content">
+                        <div className="group-modal-header">
+                            <h2>Create a <span>Group Chat</span></h2>
+                            <button className="group-modal-close-btn" onClick={() => setShowCreateGroupModal(false)}>×</button>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-                            <div style={{ width: 90, height: 90, borderRadius: '50%', background: '#eee', position: 'relative', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <span style={{ fontSize: 44, color: '#bbb' }}>👥</span>
-                                <button style={{ position: 'absolute', bottom: 8, right: 8, background: '#fff', border: '2px solid #CB1E2A', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                    <span role="img" aria-label="Edit" style={{ color: '#CB1E2A', fontSize: 16 }}>✏️</span>
+                        <div className="group-modal-avatar-row">
+                            <div className="group-modal-avatar">
+                                <span>👥</span>
+                                <button className="group-modal-avatar-edit-btn">
+                                    <span role="img" aria-label="Edit">✏️</span>
                                 </button>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            <input type="text" placeholder="Example Name" value={groupName} onChange={e => setGroupName(e.target.value)} style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }} />
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <select value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}>
+                        <div className="group-modal-fields">
+                            <input type="text" placeholder="Example Name" value={groupName} onChange={e => setGroupName(e.target.value)} className="group-modal-input" />
+                            <div className="group-modal-select-row">
+                                <select
+                                    value={selectedEventId}
+                                    onChange={e => setSelectedEventId(e.target.value)}
+                                    className="group-modal-select"
+                                >
                                     <option value="">Select Event</option>
                                     {volunteerEvents.map(ev => (
                                         <option key={ev._id} value={ev._id}>{ev.eventTitleName}</option>
                                     ))}
                                 </select>
-                                <select value={selectedParish} onChange={e => setSelectedParish(e.target.value)} style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #ccc', fontSize: 16 }}>
+                                <select
+                                    value={selectedParish}
+                                    onChange={e => setSelectedParish(e.target.value)}
+                                    className="group-modal-select"
+                                >
                                     <option value="">Select Parish</option>
                                     {vicariateData.filter(v => !v.isHeader).map((v, idx) => (
                                         <option key={idx} value={v.value}>{v.label}</option>
                                     ))}
                                 </select>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div className="group-modal-checkbox-row">
                                 <input type="checkbox" id="addAllJoined" checked={addAllChecked} onChange={e => setAddAllChecked(e.target.checked)} />
-                                <label htmlFor="addAllJoined" style={{ fontSize: 15 }}>Add All Joined that Event</label>
+                                <label htmlFor="addAllJoined">Add All Joined that Event</label>
                             </div>
-                            <div style={{ margin: '8px 0', maxHeight: 100, overflowY: 'auto', background: '#fafafa', borderRadius: 6, padding: 8 }}>
+                            <div className="group-modal-userlist">
                                 {groupUsers.length > 0 ? groupUsers.map(u => (
-                                    <div key={u.username} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                    <div key={u.username} className="group-modal-user">
                                         <span>{u.fullName || u.username}</span>
-                                        <button onClick={() => handleRemoveUser(u.username)} style={{ background: 'none', border: 'none', color: '#CB1E2A', fontWeight: 700, cursor: 'pointer' }}>×</button>
+                                        <button className="group-modal-user-remove" onClick={() => handleRemoveUser(u.username)}>×</button>
                                     </div>
-                                )) : <span style={{ color: '#888' }}>No users added yet.</span>}
+                                )) : <span className="group-modal-user-empty">No users added yet.</span>}
                             </div>
-                            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                                <button style={{ flex: 1, background: '#fff', color: '#CB1E2A', border: '2px solid #CB1E2A', borderRadius: 8, padding: '10px 0', fontWeight: 600, fontSize: 16, cursor: 'pointer' }} onClick={() => {
+                            <div className="group-modal-buttons">
+                                <button className="group-modal-add-btn" onClick={() => {
                                     const username = prompt('Enter username to add:');
                                     const user = users.find(u => u.username === username);
                                     if (user) handleAddUser({ username: user.username, fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() });
                                     else if (username) alert('User not found');
                                 }}>Add User</button>
-                                <button style={{ flex: 1, background: '#CB1E2A', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 0', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
+                                <button className="group-modal-create-btn"
                                     onClick={async () => {
                                         if (!groupName.trim() || groupUsers.length === 0) {
                                             alert('Please enter a group name and add at least one user.');
@@ -578,7 +568,7 @@ const Conversation = () => {
                                             memberUsernames.push(currentAdminUsername);
                                         }
                                         try {
-                                            const res = await axios.post(`${API_BASE}/api/groupchats`, {
+                                            await axios.post(`${API_BASE}/api/groupchats`, {
                                                 name: groupName,
                                                 event: selectedEventId || undefined,
                                                 parish: selectedParish || undefined,

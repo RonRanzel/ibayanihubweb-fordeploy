@@ -6,6 +6,7 @@ import profIcon from "../../Assets/user_icon.png";
 import addUserIcon from "../../Assets/addicon.svg";
 import dlIcon from "../../Assets/downloadicon.svg";
 import '../../Styles/sVolunteers.css';
+import '../../Styles/sHeader.css';
 import { logAuditFrontend } from '../../logAuditFrontend';
 
 const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api";
@@ -155,22 +156,22 @@ const Volunteers = () => {
 
     return (
         <div id="volunteers-container">
-            <div className="volunteers-header">
-                <div className="volunteers-header-left">
-                    <div className="volunteers-date-time-box">
-                        <div className="volunteers-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                        <div className="volunteers-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+            <div className="header">
+                <div className="header-left">
+                    <div className="header-cTitle">
+                        <p className="header-title">Volunteer Management</p>
+                    </div>
+                    <div className="header-cDateTime">
+                        <p className="header-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="header-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</p>
                     </div>
                 </div>
-                <div className="volunteers-title-main">Volunteer Management</div>
-                <div className="volunteers-header-right">
-                    <div className="volunteers-admin-profile">
-                        <img src={profIcon} alt="User" className="volunteers-admin-img" />
-                        <div className="volunteers-admin-details">
-                            <span className="volunteers-admin-name">
-                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
-                            </span>
-                            <span className="volunteers-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                <div className="header-right">
+                    <div className="header-cProf">
+                        <img src={profIcon} alt="User" className="header-img" />
+                        <div className="header-cName">
+                            <p className="header-name">{loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}</p>
+                            <p className="header-email">{loggedInAdmin?.admin_email || ''}</p>
                         </div>
                     </div>
                 </div>

@@ -12,87 +12,10 @@
 }
 
 #auditlog-container {
-    padding: 24px;
     background: #f4f4f4;
     min-height: 100vh;
 }
 
-.auditlog-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-}
-.auditlog-header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.auditlog-date-time-box {
-    background: #fff;
-    border-radius: 8px;
-    border: #737373 1px solid;
-    padding: 8px 16px;
-    text-align: center;
-}
-.auditlog-date {
-    color: #CB1E2A;
-    font-weight: 700;
-    font-size: 16px;
-}
-.auditlog-time {
-    color: #222;
-    font-weight: 500;
-    font-size: 15px;
-}
-.auditlog-title-main {
-    font-weight: 700;
-    width: 50%;
-    text-align: center;
-    font-size: 28px;
-    background: #fff;
-    border-radius: 8px;
-    border: #737373 1px solid;
-    padding: 8px 32px;
-    color: #CB1E2A;
-    letter-spacing: 1.3px;
-}
-.auditlog-header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.auditlog-admin-profile {
-    background: #fff;
-    border-radius: 8px;
-    border: #737373 1px solid;
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-.auditlog-admin-img {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #eee;
-    margin-right: 8px;
-}
-.auditlog-admin-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-.auditlog-admin-name {
-    font-weight: 700;
-    color: #CB1E2A;
-    font-size: 16px;
-}
-.auditlog-admin-email {
-    font-size: 13px;
-    color: #222;
-}
 
 .auditlog-top-bar {
     display: flex;
@@ -105,7 +28,7 @@
     border-radius: 9px;
     padding: 4px;
     width: fit-content;
-    box-shadow: 0 2px 7px rgba(203,30,42,0.09);
+    border: #bfbfbf 1px solid;
 }
 .auditlog-tab-btn {
     border: none;
@@ -183,8 +106,8 @@
 }
 .auditlog-table-scroll {
     overflow-x: auto;
-    max-height: 420px;
-    min-height: 160px;
+    max-height: 515px   ;
+    min-height: 515px;
     /* For vertical scroll */
 }
 .auditlog-table {

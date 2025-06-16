@@ -1,0 +1,224 @@
+.group-modal-select-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.group-modal-select {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1.5px solid #cccccc;
+  font-size: 16px;
+  font-family: 'Poppins-Reg', Arial, sans-serif;
+  background: #fafbfc;
+  box-sizing: border-box;
+}
+
+/* ...rest of modal and button styles from previous answer... */
+.group-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.36);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.group-modal-content {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 28px 28px 28px;
+  min-width: 400px;
+  max-width: 480px;
+  box-shadow: 0 4px 28px #CB1E2A22;
+  position: relative;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-family: 'Poppins-Reg', Arial, sans-serif;
+}
+.group-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px;
+}
+.group-modal-header h2 {
+  margin: 0; font-size: 26px; color: #CB1E2A; font-family: 'Poppins-Bold';
+}
+.group-modal-header h2 span { color: #222; font-family: 'Poppins-Semi'; }
+.group-modal-close-btn {
+  background: none; border: 2px solid #CB1E2A; border-radius: 8px;
+  font-size: 28px; color: #CB1E2A; cursor: pointer;
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+}
+.group-modal-avatar-row {
+  display: flex; flex-direction: column; align-items: center; margin-bottom: 18px;
+}
+.group-modal-avatar {
+  width: 92px; height: 92px; border-radius: 50%;
+  background: #f3f3f3; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 50px; color: #bbb; margin-bottom: 0;
+}
+.group-modal-avatar-edit-btn {
+  position: absolute; bottom: 8px; right: 8px;
+  background: #fff; border: 2px solid #CB1E2A; border-radius: 50%;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; color: #CB1E2A;
+}
+.group-modal-fields {
+  display: flex; flex-direction: column; gap: 16px;
+}
+.group-modal-input {
+  padding: 10px; border-radius: 8px; border: 1.5px solid #cccccc;
+  font-size: 16px; outline: none;
+  background: #fafbfc;
+  font-family: 'Poppins-Reg', Arial, sans-serif;
+}
+.group-modal-checkbox-row {
+  display: flex; align-items: center; gap: 7px;
+}
+.group-modal-checkbox-row label {
+  font-size: 15px; color: #222; font-family: 'Poppins-Semi';
+}
+.group-modal-userlist {
+  margin: 2px 0 2px 0;
+  max-height: 120px; overflow-y: auto;
+  background: #fafafa;
+  border-radius: 8px; padding: 8px 10px;
+  border: 1.2px solid #ececec;
+}
+.group-modal-user {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-size: 15px; color: #333;
+}
+.group-modal-user-remove {
+  background: none; border: none; color: #CB1E2A; font-weight: bold; font-size: 19px;
+  cursor: pointer; line-height: 1;
+}
+.group-modal-user-empty {
+  color: #888; font-size: 14px; font-style: italic;
+}
+.group-modal-buttons {
+  display: flex; gap: 10px; margin-top: 8px;
+}
+.group-modal-add-btn {
+  flex: 1;
+  background: #fff;
+  color: #CB1E2A;
+  border: 2px solid #CB1E2A;
+  border-radius: 8px;
+  padding: 10px 0;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.group-modal-add-btn:hover {
+  background: #CB1E2A; color: #fff;
+}
+.group-modal-create-btn {
+  flex: 1;
+  background: #CB1E2A;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 0;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.group-modal-create-btn:hover {
+  background: #B11A24;
+}
+
+/* ---- Group List UI ---- */
+.convo-group-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 0 10px;
+}
+.convo-group-list-header h1 {
+  padding: 6px 0 0 0;
+  font-size: 20px;
+  margin: 0;
+}
+.create-group-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  color: #CB1E2A;
+  font-weight: bold;
+  padding: 2px 7px;
+  border-radius: 6px;
+  transition: background 0.14s;
+}
+.create-group-btn:hover {
+  background: #f0e8e8;
+}
+.convo-group-empty {
+  color: #888;
+  text-align: center;
+  margin-top: 40px;
+}
+.convo-group-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.convo-group-name {
+  flex: 1;
+  font-weight: 600;
+}
+.convo-group-delete-btn {
+  color: #CB1E2A;
+  background: none;
+  border: 1.5px solid #CB1E2A;
+  border-radius: 6px;
+  padding: 2px 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-family: 'Poppins-Bold', Arial, sans-serif;
+  font-weight: 600;
+  margin-left: 4px;
+  transition: background 0.18s, color 0.18s;
+}
+.convo-group-delete-btn:hover {
+  background: #CB1E2A;
+  color: #fff;
+}
+.convo-group-header {
+  background: #CB1E2A;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.convo-group-header-title {
+  font-weight: 700; font-size: 18px;
+}
+.convo-group-leave-btn {
+  background: #fff;
+  color: #CB1E2A;
+  border: 1.5px solid #CB1E2A;
+  border-radius: 8px;
+  padding: 4px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  margin-left: 16px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.convo-group-leave-btn:hover {
+  background: #CB1E2A;
+  color: #fff;
+}

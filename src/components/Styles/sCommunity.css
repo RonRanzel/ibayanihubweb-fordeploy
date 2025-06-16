@@ -12,86 +12,13 @@
 }
 
 #community-container {
-    padding: 24px;
     background: #f4f4f4;
-    min-height: 100vh;
 }
 
-.community-header {
+.for-postedby {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-}
-.community-header-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.community-date-time-box {
-    background: #fff;
-    border-radius: 8px;
-    border: #737373 1px solid;
-    padding: 8px 16px;
-    text-align: center;
-}
-.community-date {
-    color: #CB1E2A;
-    font-weight: 700;
-    font-size: 16px;
-}
-.community-time {
-    color: #222;
-    font-weight: 500;
-    font-size: 15px;
-}
-.community-title-main {
-    font-weight: 700;
-    width: 50%;
-    text-align: center;
-    font-size: 28px;
-    background: #fff;
-    border-radius: 8px;
-    border: #737373 1px solid;
-    padding: 8px 32px;
-    color: #CB1E2A;
-    letter-spacing: 1.3px;
-}
-.community-header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.community-admin-profile {
-    background: #fff;
-    border-radius: 8px;
-    border: #737373 1px solid;
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-.community-admin-img {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #eee;
-    margin-right: 8px;
-}
-.community-admin-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-.community-admin-name {
-    font-weight: 700;
-    color: #CB1E2A;
-    font-size: 16px;
-}
-.community-admin-email {
-    font-size: 13px;
-    color: #222;
+    gap: 8px;
 }
 
 .community-top-bar {
@@ -106,7 +33,7 @@
     border-radius: 9px;
     padding: 4px;
     width: fit-content;
-    box-shadow: 0 2px 7px rgba(203,30,42,0.09);
+    border: #bfbfbf 1px solid;
 }
 .community-tab-btn {
     border: none;
@@ -182,7 +109,7 @@
 }
 .community-table-scroll {
     overflow-x: auto;
-    max-height: 400px;
+    max-height: 515px;
 }
 .community-table {
     width: 100%;
@@ -311,6 +238,150 @@
 }
 .community-announcement-form button:hover {
     background: #a31e2a;
+}
+
+/* ANNOUNCEMENT CARD STYLES, 3 PER ROW */
+.announcement-card-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    padding: 24px 20px 40px 20px;
+    justify-content: flex-start;
+}
+
+/* Each card has fixed width: 330px; max 100% for responsiveness */
+.announcement-card-clickable {
+    width: 330px;
+    max-width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    outline: none;
+    transition: box-shadow 0.15s, transform 0.12s;
+    border-radius: 12px;
+}
+
+.announcement-card-clickable:focus,
+.announcement-card-clickable:hover {
+    box-shadow: 0 4px 22px #0002, 0 2px 8px #8881;
+    transform: translateY(-2px) scale(1.01);
+}
+
+.announcement-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px #0001;
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.18s;
+}
+
+.announcement-card-img-wrapper {
+    width: 100%;
+    height: 154px;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.announcement-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+.announcement-card-content {
+    padding: 17px 16px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.announcement-card-title {
+    font-family: 'Poppins-Semi', Arial, sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: #CB1E2A;
+    letter-spacing: -0.5px;
+}
+.announcement-card-desc {
+    color: #232323;
+    font-family: 'Poppins-Reg', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    margin-bottom: 4px;
+}
+.announcement-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    color: #bdbdbd;
+    font-size: 13px;
+    font-family: 'Poppins-Reg', Arial, sans-serif;
+    margin-bottom: 1px;
+}
+.announcement-card-heart {
+    display: flex;
+    align-items: center;
+    color: #e63946;
+    font-weight: 600;
+    gap: 3px;
+}
+.announcement-card-comments {
+    color: #888;
+}
+.announcement-card-date {
+    color: #888;
+    font-size: 12px;
+    margin-top: 2px;
+    font-family: 'Poppins-Reg', Arial, sans-serif;
+}
+
+/* Responsive for cards */
+@media (max-width: 1200px) {
+    .announcement-card-clickable {
+        width: 30vw;
+        min-width: 240px;
+        max-width: 330px;
+    }
+    .announcement-card-list {
+        gap: 18px;
+        padding: 16px 7px 30px 7px;
+    }
+}
+@media (max-width: 1023px) {
+    .announcement-card-clickable {
+        width: 47vw;
+        min-width: 200px;
+        max-width: 330px;
+    }
+}
+@media (max-width: 700px) {
+    .announcement-card-list {
+        gap: 10px;
+        padding: 9px 2px 16px 2px;
+    }
+    .announcement-card-clickable {
+        width: 95vw;
+        min-width: 95vw;
+        max-width: 99vw;
+    }
+    .announcement-card-img-wrapper {
+        height: 60vw;
+        min-height: 100px;
+    }
+}
+
+/* Ensures exactly 3 per row on desktop */
+@media (min-width: 1024px) {
+    .announcement-card-list {
+        justify-content: flex-start;
+    }
+    .announcement-card-clickable {
+        flex: 0 0 330px;
+    }
 }
 
 @media (max-width: 1100px) {

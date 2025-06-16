@@ -1,0 +1,115 @@
+@font-face {
+    font-family: 'Poppins-Bold';
+    src: url('../Assets/fonts/Poppins-Bold.ttf');
+}
+@font-face {
+    font-family: 'Poppins-Semi';
+    src: url('../Assets/fonts/Poppins-SemiBold.ttf');
+}
+@font-face {
+    font-family: 'Poppins-Reg';
+    src: url('../Assets/fonts/Poppins-Regular.ttf');
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    background-color: #CB1E2A;
+    background-image: url('../Assets/headerbg.svg');
+    background-size: cover;
+    padding: 16px;
+    min-height: 64px;
+    border-radius: 8px;
+    letter-spacing: 1px;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+}
+
+.header-cTitle {
+    /* No specific styles needed for now */
+}
+
+.header-title {
+    font-family: 'Poppins-Bold';
+    text-align: left;
+    font-size: 28px;
+    color: #fff;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.header-cDateTime {
+    display: flex;
+    gap: 16px;
+    color: #fff;
+    font-size: 15px;
+}
+
+.header-date {
+    font-family: 'Poppins-Semi';
+    font-size: 16px;
+    margin: 0;
+}
+
+.header-time {
+    font-family: 'Poppins-Reg';
+    font-size: 16px;
+    margin: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 30px;
+    padding: 4px 12px 4px 4px;
+    min-width: 235px;
+    box-shadow: 0 1px 4px 0 rgba(0,0,0,0.03);
+}
+
+.header-cProf {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 30px;
+    padding-inline: 0;
+    border: none;
+    background: none;
+}
+
+.header-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #CB1E2A;
+    border: 3px solid #fff;
+    object-fit: cover;
+    display: block;
+}
+
+.header-cName {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.header-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #CB1E2A;
+    margin: 0;
+}
+
+.header-email {
+    font-size: 13px;
+    color: #444;
+    margin: 0;
+    line-height: 1;
+}

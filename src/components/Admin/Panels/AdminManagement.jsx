@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from 'axios';
 import "../../Styles/sAdmin.css";
+import "../../Styles/sHeader.css";
 import searchIcon from "../../Assets/searchicon.svg";
 import profIcon from "../../Assets/user_icon.png";
 import addUserIcon from "../../Assets/addicon.svg";
@@ -8,10 +9,15 @@ import dlIcon from "../../Assets/downloadicon.svg";
 import filterIcon from "../../Assets/filtericon.svg";
 import AddAdmin from "./Modal/AddAdmin";
 import ViewAdmin from "./Modal/ViewAdmin";
-import ConfirmAlert from "./Modal/ConfirmAlert";
 import { logAuditFrontend } from '../../logAuditFrontend';
 
 const API_BASE = "https://ibayanihubweb-backend.onrender.com";
+
+const FILTER_OPTIONS = [
+  { value: "All", label: "All" },
+  { value: "Online", label: "Online" },
+  { value: "Offline", label: "Offline" },
+];
 
 const AdminManagement = () => {
   const [dateTime, setDateTime] = useState(new Date());
@@ -23,16 +29,15 @@ const AdminManagement = () => {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [loggedInAdmin, setLoggedInAdmin] = useState(null);
   const [activeTab, setActiveTab] = useState('active');
-  const [confirmAlert, setConfirmAlert] = useState({ open: false, type: "warning", message: "", onConfirm: null });
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef();
 
-  // Fetch all admins
   useEffect(() => {
     axios.get(`${API_BASE}/api/getAdmin`)
       .then(response => setAdmins(response.data))
       .catch(error => console.log("Error fetching admins:", error));
   }, []);
 
-  // Fetch logged-in admin details
   useEffect(() => {
     const email = localStorage.getItem('adminEmail');
     if (email) {
@@ -42,11 +47,23 @@ const AdminManagement = () => {
     }
   }, []);
 
-  // Live clock update
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Click outside to close filter dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setFilterOpen(false);
+      }
+    }
+    if (filterOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [filterOpen]);
 
   const formatDate = date =>
     date ? new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "N/A";
@@ -74,54 +91,6 @@ const AdminManagement = () => {
     return searchMatch && statusMatch;
   });
 
-  // Use ConfirmAlert for deactivate/reactivate
-  const handleAdminStatusChange = (adminId, deactivate) => {
-    setConfirmAlert({
-      open: true,
-      type: deactivate ? "warning" : "success",
-      title: deactivate ? "Deactivate Admin" : "Reactivate Admin",
-      message: deactivate
-        ? "Are you sure you want to deactivate this admin? They will lose access to the platform."
-        : "Are you sure you want to reactivate this admin? They will regain access to the platform.",
-      confirmText: deactivate ? "Deactivate" : "Reactivate",
-      cancelText: "Cancel",
-      onConfirm: () => {
-        // Use new explicit endpoints for admin management
-        const url = deactivate ? `${API_BASE}/api/deactivateAdmin` : `${API_BASE}/api/reactivateAdmin`;
-        axios.post(url, { adminId })
-          .then(() => {
-            logAuditFrontend({
-              userId: localStorage.getItem('adminEmail') || 'unknown',
-              userType: 'admin',
-              action: deactivate ? 'Deactivate Admin' : 'Reactivate Admin',
-              details: `${deactivate ? 'Deactivated' : 'Reactivated'} admin with ID: ${adminId}`,
-              platform: 'web'
-            });
-            axios.get(`${API_BASE}/api/getAdmin`).then((response) => setAdmins(response.data));
-            setShowViewAdminModal(false);
-            setConfirmAlert({ ...confirmAlert, open: false });
-          })
-          .catch((error) => {
-            let msg = 'Failed to update admin status';
-            if (error.response && error.response.data && error.response.data.message) {
-              msg += `: ${error.response.data.message}`;
-            }
-            setConfirmAlert({
-              ...confirmAlert,
-              open: true,
-              type: "error",
-              title: "Failed",
-              message: msg,
-              confirmText: "OK",
-              cancelText: "",
-              onConfirm: () => setConfirmAlert({ ...confirmAlert, open: false }),
-            });
-          });
-      }
-    });
-  };
-
-  // Download admins as CSV
   const handleDownloadAdmins = () => {
     const data = (activeTab === 'active' ? activeAdmins : deactivatedAdmins);
     if (!data.length) return alert('No admins to download.');
@@ -158,13 +127,10 @@ const AdminManagement = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Set admin online status on mount/unmount
   useEffect(() => {
     const email = localStorage.getItem('adminEmail');
     if (!email) return;
-    // Set online on mount
     axios.post(`${API_BASE}/api/setAdminStatus`, { email, status: true });
-    // Set offline on tab close
     const handleUnload = () => {
       navigator.sendBeacon && navigator.sendBeacon(
         `${API_BASE}/api/setAdminStatus`,
@@ -188,7 +154,6 @@ const AdminManagement = () => {
     });
   }, []);
 
-  // Columns for Active and Deactivated tabs (per Image 4)
   const activeAdminListColumns = [
     { key: "fullName", label: "Name" },
     { key: "admin_email", label: "Email" },
@@ -264,46 +229,65 @@ const AdminManagement = () => {
     </tr>
   );
 
-  // Handle admin profile update from modal
   const handleProfileUpdate = (updatedAdmin) => {
     setAdmins((prev) => prev.map(a => a._id === updatedAdmin._id ? updatedAdmin : a));
     setSelectedAdmin(updatedAdmin);
   };
 
+  // Handler passed to ViewAdmin for status changes:
+  const handleAdminStatusChange = async (adminId, deactivate) => {
+    const url = deactivate ? `${API_BASE}/api/deactivateAdmin` : `${API_BASE}/api/reactivateAdmin`;
+    await axios.post(url, { adminId });
+    logAuditFrontend({
+      userId: localStorage.getItem('adminEmail') || 'unknown',
+      userType: 'admin',
+      action: deactivate ? 'Deactivate Admin' : 'Reactivate Admin',
+      details: `${deactivate ? 'Deactivated' : 'Reactivated'} admin with ID: ${adminId}`,
+      platform: 'web'
+    });
+    // Refresh admin list and selected admin preview
+    const response = await axios.get(`${API_BASE}/api/getAdmin`);
+    setAdmins(response.data);
+    setSelectedAdmin(response.data.find(a => a._id === adminId));
+    setShowViewAdminModal(false); // optional: close modal after action
+  };
+
   return (
     <div className="admins-container">
       {/* HEADER */}
-      <div className="admins-header">
-        <div className="admins-header-left">
-          <div className="admins-date-time-box">
-            <div className="admins-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-            <div className="admins-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+      <div className="header">
+        <div className="header-left">
+          <div className="header-cTitle">
+            <p className="header-title">Admin Management</p>
+          </div>
+          <div className="header-cDateTime">
+            <p className="header-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p className="header-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</p>
           </div>
         </div>
-        <div className="admins-title-main">Admin Management</div>
-        <div className="admins-header-right">
-          <div className="admins-admin-profile">
-            <img src={profIcon} alt="User" className="admins-admin-img" />
-            <div className="admins-admin-details">
-              <span className="admins-admin-name">
-                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
-              </span>
-              <span className="admins-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+        <div className="header-right">
+          <div className="header-cProf">
+            <img src={profIcon} alt="User" className="header-img" />
+            <div className="header-cName">
+              <p className="header-name">{loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}</p>
+              <p className="header-email">{loggedInAdmin?.admin_email || ''}</p>
             </div>
           </div>
         </div>
       </div>
       {/* TOP BAR */}
       <div className="admins-top-bar">
-        <div className="admins-tabs">
-          <button className={activeTab === 'active' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('active')}> Active Admins</button>
-          <button className={activeTab === 'deactivated' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('deactivated')}>Deactivated Admins</button>
-        </div>
-        <div className="admins-search-container">
+        <div className="admins-top-left">
+          <div className="admins-tabs">
+            <button className={activeTab === 'active' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('active')}> Active Admins</button>
+            <button className={activeTab === 'deactivated' ? 'tab-btn active-tab' : 'tab-btn'} onClick={() => setActiveTab('deactivated')}>Deactivated Admins</button>
+          </div>
           <button className="admins-add-button" onClick={() => setShowAddAdminModal(true)}>
             <img src={addUserIcon} alt="Add User" />
             <span>Add Admin</span>
           </button>
+        </div>
+        <div className="admins-search-container">
           <div className="admins-searchbar">
             <img src={searchIcon} alt="Search" className="admins-search-icon" />
             <input
@@ -314,8 +298,23 @@ const AdminManagement = () => {
               className="admins-search-input"
             />
           </div>
-          <div className="admins-filter">
-            <img src={filterIcon} className="admins-filter-icon" />
+          <div className="admins-filter" ref={filterRef}>
+            <button className="admins-filter-btn" onClick={() => setFilterOpen((open) => !open)}>
+              <img src={filterIcon} className="admins-filter-icon" alt="Filter" />
+            </button>
+            {filterOpen && (
+              <div className="admins-filter-dropdown">
+                {FILTER_OPTIONS.map(opt => (
+                  <div
+                    key={opt.value}
+                    className={`admins-filter-option${statusFilter === opt.value ? " selected" : ""}`}
+                    onClick={() => { setStatusFilter(opt.value); setFilterOpen(false); }}
+                  >
+                    {opt.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <button className="admins-download-button" onClick={handleDownloadAdmins}>
             <img src={dlIcon} alt="----" />
@@ -335,10 +334,10 @@ const AdminManagement = () => {
           </thead>
           <tbody>
             {(activeTab === 'active'
-              ? activeAdmins.map((admin, i) => renderAdminListRow(admin, i, false))
-              : deactivatedAdmins.map((admin, i) => renderAdminListRow(admin, i, true))
+              ? filteredAdmins.map((admin, i) => renderAdminListRow(admin, i, false))
+              : filteredAdmins.map((admin, i) => renderAdminListRow(admin, i, true))
             )}
-            {(activeTab === 'active' ? activeAdmins : deactivatedAdmins).length === 0 && (
+            {(activeTab === 'active' ? filteredAdmins : filteredAdmins).length === 0 && (
               <tr>
                 <td colSpan={(activeTab === 'active' ? activeAdminListColumns.length : deactivatedAdminListColumns.length)} style={{ textAlign: 'center', fontWeight: 500 }}>
                   No admins found
@@ -372,20 +371,6 @@ const AdminManagement = () => {
           </div>
         </div>
       )}
-
-      {/* Confirm Alert Modal */}
-      <ConfirmAlert
-        open={confirmAlert.open}
-        title={confirmAlert.title}
-        message={confirmAlert.message}
-        type={confirmAlert.type}
-        confirmText={confirmAlert.confirmText}
-        cancelText={confirmAlert.cancelText}
-        onConfirm={() => {
-          if (confirmAlert.onConfirm) confirmAlert.onConfirm();
-        }}
-        onCancel={() => setConfirmAlert({ ...confirmAlert, open: false })}
-      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import searchIcon from "../../Assets/searchicon.svg";
 import profIcon from "../../Assets/user_icon.png";
 import { logAuditFrontend } from '../../logAuditFrontend';
 import '../../Styles/sCommunity.css';
+import "../../Styles/sHeader.css"
 
 const WEB_API_BASE = "https://ibayanihubweb-backend.onrender.com/api";
 const API_BASE = "https://ibayanihub-backend.onrender.com/api";
@@ -78,7 +79,6 @@ const CommunityManagement = () => {
 
     const formatTime = (date) => date && (new Date(date)).toLocaleTimeString("en-US");
 
-    // "20 mins ago" etc
     const getTimeAgo = (date) => {
         if (!date) return "";
         const now = new Date();
@@ -113,7 +113,7 @@ const CommunityManagement = () => {
                         platform: 'web'
                     });
                     fetchPostsAndAnnouncements();
-                    fetchFlaggedPosts(); // <-- Ensure flagged posts list updates immediately
+                    fetchFlaggedPosts(); 
                     setMessage("✅ Post deleted successfully!");
                     setShowPostModal(false);
                 })
@@ -179,12 +179,11 @@ const CommunityManagement = () => {
             });
     };
 
-    // Edit announcement
     const handleEditAnnouncementClick = (announcement) => {
         setEditMode(true);
         setEditAnnouncement({
             ...announcement,
-            media: null // reset file input for editing
+            media: null 
         });
         setEditAnnouncementImagePreview(announcement.media ? getMediaUrl(announcement.media) : null);
         setEditAnnouncementMessage('');
@@ -249,7 +248,6 @@ const CommunityManagement = () => {
         }
     };
 
-    // Helper for correct profile picture URL (force https)
     const getProfilePictureUrl = (profilePicture) => {
         if (!profilePicture) return profIcon;
         let url = profilePicture;
@@ -258,7 +256,6 @@ const CommunityManagement = () => {
         return profIcon;
     };
 
-    // Helper to get full media URL
     const getMediaUrl = (media) => {
         if (!media) return '';
         if (media.startsWith('http')) return media;
@@ -268,7 +265,6 @@ const CommunityManagement = () => {
         return media;
     };
 
-    // SEARCH FILTER (add name, username)
     const filteredPosts = communityPosts.filter(post =>
         (post.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (post.content || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -282,25 +278,62 @@ const CommunityManagement = () => {
         (a.username || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const AnnouncementCard = ({ announcement }) => (
+        <div className="announcement-card">
+            <div className="announcement-card-img-wrapper">
+                <img
+                    src={announcement.media ? getMediaUrl(announcement.media) : profIcon}
+                    alt="Announcement"
+                    className="announcement-card-img"
+                />
+            </div>
+            <div className="announcement-card-content">
+                <div className="announcement-card-title">
+                    <span style={{ color: '#CB1E2A', fontWeight: 700 }}>{announcement.title}</span>
+                </div>
+                <div className="announcement-card-desc">
+                    {(announcement.content || '').length > 45 ? announcement.content.slice(0, 45) + "..." : announcement.content}
+                </div>
+                <div className="announcement-card-meta">
+                    <span className="announcement-card-heart">
+                        <svg width="16" height="16" fill="#e63946" viewBox="0 0 24 24" style={{ marginRight: 3 }}>
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        {typeof announcement.hearts === "number" ? announcement.hearts : (announcement.hearts ? announcement.hearts.length : 0)}
+                    </span>
+                    <span className="announcement-card-comments">
+                        {typeof announcement.comments === "number"
+                            ? `${announcement.comments} Comments`
+                            : `${announcement.comments?.length || 0} Comments`
+                        }
+                    </span>
+                </div>
+                <div className="announcement-card-date">
+                    Posted on {formatDate(announcement.createdAt)}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div id="community-container">
             {/* Header */}
-            <div className="dashb-header">
-                <div className="dashb-header-left">
-                    <div className="dashb-date-time-box">
-                        <div className="dashb-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                        <div className="dashb-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</div>
+            <div className="header">
+                <div className="header-left">
+                    <div className="header-cTitle">
+                        <p className="header-title">Community Management</p>
+                    </div>
+                    <div className="header-cDateTime">
+                        <p className="header-date">{dateTime.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="header-time">{dateTime.toLocaleTimeString('en-US', { hour12: true })}</p>
                     </div>
                 </div>
-                <div className="dashb-title-main">Community Management</div>
-                <div className="dashb-header-right">
-                    <div className="dashb-admin-profile">
-                        <img src={profIcon} alt="User" className="dashb-admin-img" />
-                        <div className="dashb-admin-details">
-                            <span className="dashb-admin-name">
-                                {loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}
-                            </span>
-                            <span className="dashb-admin-email">{loggedInAdmin?.admin_email || ''}</span>
+                <div className="header-right">
+                    <div className="header-cProf">
+                        <img src={profIcon} alt="User" className="header-img" />
+                        <div className="header-cName">
+                            <p className="header-name">{loggedInAdmin ? `${loggedInAdmin.admin_firstName?.toUpperCase()}${loggedInAdmin.admin_middleName ? ' ' + loggedInAdmin.admin_middleName.toUpperCase() : ''} ${loggedInAdmin.admin_lastName?.toUpperCase()}` : 'Admin'}</p>
+                            <p className="header-email">{loggedInAdmin?.admin_email || ''}</p>
                         </div>
                     </div>
                 </div>
@@ -310,7 +343,7 @@ const CommunityManagement = () => {
                 <div className="community-tabs">
                     <button className={activeTab === 'posts' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('posts')}>Community Posts</button>
                     <button className={activeTab === 'announcements' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('announcements')}>Announcements</button>
-                    <button className={activeTab === 'flagged' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('flagged')}>Flagged Posts</button>
+                    <button className={activeTab === 'flagged' ? 'community-tab-btn community-active-tab' : 'community-tab-btn'} onClick={() => setActiveTab('flagged')}>Flagged</button>
                 </div>
                 <div className="community-search-container">
                     <div className="community-searchbar">
@@ -332,7 +365,26 @@ const CommunityManagement = () => {
             </div>
             <div className="community-list-view">
                 <div className="community-table-scroll">
-                    {activeTab === "flagged" ? (
+                    {activeTab === "announcements" ? (
+                        <div className="announcement-card-list">
+                            {filteredAnnouncements.length === 0 ? (
+                                <div style={{ textAlign: "center", color: "#888", padding: 40 }}>
+                                    No announcements found.
+                                </div>
+                            ) : (
+                                filteredAnnouncements.map((announcement) => (
+                                    <div
+                                        key={announcement._id}
+                                        className="announcement-card-clickable"
+                                        tabIndex={0}
+                                        onClick={() => handleViewPost(announcement)}
+                                    >
+                                        <AnnouncementCard announcement={announcement} />
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    ) : activeTab === "flagged" ? (
                         <>
                         <table className="community-table">
                             <thead>
@@ -374,7 +426,6 @@ const CommunityManagement = () => {
                                 ))}
                             </tbody>
                         </table>
-                        {/* Flagged Comments Table */}
                         <h3 style={{marginTop:32, marginBottom:8, color:'#CB1E2A'}}>Flagged Comments</h3>
                         <table className="community-table">
                             <thead>
@@ -409,7 +460,6 @@ const CommunityManagement = () => {
                         <table className="community-table">
                             <thead>
                                 <tr>
-                                    <th>Profile Picture</th>
                                     <th>Posted By</th>
                                     <th>Date Posted</th>
                                     <th>Title</th>
@@ -421,86 +471,46 @@ const CommunityManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {activeTab === "posts" ? (
-                                    filteredPosts.map((post) => (
-                                        <tr key={post._id}>
-                                            <td>
-                                                <img
-                                                    src={getProfilePictureUrl(post.profilePicture)}
-                                                    alt="avatar"
-                                                    className="community-profile-img"
-                                                />
-                                            </td>
-                                            <td>
-                                                <span className="full-name">{post.user}</span>
-                                                <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
-                                            </td>
-                                            <td>
-                                                {formatDate(post.createdAt)} {formatTime(post.createdAt)}
-                                            </td>
-                                            <td>{post.title}</td>
-                                            <td className="content-cell">{post.content}</td>
-                                            <td>
-                                                {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
-                                            </td>
-                                            <td>
-                                                {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
-                                            </td>
-                                            <td>
-                                                {typeof post.reports === "number"
-                                                    ? post.reports
-                                                    : (post.reports && post.reports.length
-                                                        ? post.reports.length
-                                                        : 0)}
-                                            </td>
-                                            <td>
-                                                <button
-                                                    className="community-view-btn"
-                                                    onClick={() => handleViewPost(post)}
-                                                    tabIndex={0}
-                                                >
-                                                    View Post
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    filteredAnnouncements.map((post) => (
-                                        <tr key={post._id}>
-                                            <td>
-                                                <img
-                                                    src={getProfilePictureUrl(post.profilePicture)}
-                                                    alt="avatar"
-                                                    className="community-profile-img"
-                                                />
-                                            </td>
-                                            <td>
-                                                <span className="full-name">{post.user}</span>
-                                                <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
-                                            </td>
-                                            <td>
-                                                {formatDate(post.createdAt)} {formatTime(post.createdAt)}
-                                            </td>
-                                            <td>{post.title}</td>
-                                            <td className="content-cell">{post.content}</td>
-                                            <td>
-                                                {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
-                                            </td>
-                                            <td>
-                                                {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
-                                            </td>
-                                            <td>
-                                                <button
-                                                    className="community-view-btn"
-                                                    onClick={() => handleViewPost(post)}
-                                                    tabIndex={0}
-                                                >
-                                                    View Post
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
+                                {filteredPosts.map((post) => (
+                                    <tr key={post._id}>
+                                        <td className="for-postedby">
+                                            <img
+                                                src={getProfilePictureUrl(post.profilePicture)}
+                                                alt="avatar"
+                                                className="community-profile-img"
+                                            />
+                                            <span className="full-name">{post.user}</span>
+                                            <span className="username" style={{ color: "#888", marginLeft: 4 }}>@{post.username}</span>
+                                        </td>
+                                        <td>
+                                            {formatDate(post.createdAt)} {formatTime(post.createdAt)}
+                                        </td>
+                                        <td>{post.title}</td>
+                                        <td className="content-cell">{post.content}</td>
+                                        <td>
+                                            {typeof post.hearts === "number" ? post.hearts : (post.hearts ? post.hearts.length : 0)}
+                                        </td>
+                                        <td>
+                                            {typeof post.comments === "number" ? post.comments : (post.comments ? post.comments.length : 0)}
+                                        </td>
+                                        <td>
+                                            {typeof post.reports === "number"
+                                                ? post.reports
+                                                : (post.reports && post.reports.length
+                                                    ? post.reports.length
+                                                    : 0)}
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="community-view-btn"
+                                                onClick={() => handleViewPost(post)}
+                                                tabIndex={0}
+                                            >
+                                                View Post
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     )}
@@ -729,7 +739,6 @@ const CommunityManagement = () => {
                             position: "relative"
                         }}
                     >
-                        {/* Modal Header */}
                         <div style={{ padding: "30px 30px 0 30px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                             <div style={{ fontWeight: 700, fontSize: 28, letterSpacing: -1.5 }}>
                                 View Community <span style={{ color: "#e63946" }}>Post</span>
@@ -749,8 +758,6 @@ const CommunityManagement = () => {
                                 ×
                             </button>
                         </div>
-
-                        {/* Post Title & Content */}
                         <div style={{ padding: "0 30px 0 30px" }}>
                             <div style={{ fontWeight: 700, fontSize: 20, margin: "20px 0 6px 0" }}>
                                 {selectedPost.title}
@@ -759,8 +766,6 @@ const CommunityManagement = () => {
                                 {selectedPost.content}
                             </div>
                         </div>
-
-                        {/* Post Image */}
                         {selectedPost.media && (
                             <div style={{ width: "100%", padding: 0, marginTop: 2 }}>
                                 <img
@@ -777,8 +782,6 @@ const CommunityManagement = () => {
                                 />
                             </div>
                         )}
-
-                        {/* Hearts, Comments */}
                         <div style={{
                             padding: "18px 30px 0 30px",
                             display: "flex",
@@ -799,8 +802,6 @@ const CommunityManagement = () => {
                                 }
                             </span>
                         </div>
-
-                        {/* Action Bar */}
                         <div style={{
                             padding: "12px 30px 0 30px",
                             display: "flex",
@@ -821,8 +822,6 @@ const CommunityManagement = () => {
                                 </span>
                             </div>
                         </div>
-
-                        {/* Footer */}
                         <div style={{
                             padding: "20px 30px 20px 30px",
                             display: "flex",
