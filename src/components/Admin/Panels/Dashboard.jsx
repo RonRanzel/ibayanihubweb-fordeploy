@@ -176,9 +176,9 @@ const Dashboard = ({ setActiveSection }) => {
         if (setActiveSection) setActiveSection(section);
     };
 
-    // Card grid for a modern dashboard
+    // Update all classNames to use dashb- prefix!
     return (
-        <div className="dashboard-main">
+        <div className="dashb-main">
             {/* Header - do not change! */}
             <div className="header">
                 <div className="header-left">
@@ -211,127 +211,127 @@ const Dashboard = ({ setActiveSection }) => {
             </div>
 
             {/* Cards grid */}
-            <div className="dashboard-cardgrid">
-                <div className="dashboard-cards-row">
+            <div className="dashb-cardgrid">
+                <div className="dashb-cards-row">
                     {/* User/Account Card */}
                     <div
-                        className="dashboard-card modern-card accounts-card clickable"
+                        className="dashb-card dashb-modern-card dashb-accounts-card dashb-clickable"
                         onClick={() => handleCardClick("userM")}
                         style={{ cursor: "pointer" }}
                         title="Go to User Accounts"
                     >
-                        <div className="modern-card-icon-box">
+                        <div className="dashb-modern-card-icon-box">
                             <img src={accountsIcon} alt="Accounts" />
                         </div>
-                        <div className="modern-card-title">User Accounts</div>
-                        <div className="modern-card-stat">{users.length}</div>
-                        <div className="modern-card-substat">Admins: <span>{admins.length}</span></div>
-                        <div className="modern-card-footer">
+                        <div className="dashb-modern-card-title">User Accounts</div>
+                        <div className="dashb-modern-card-stat">{users.length}</div>
+                        <div className="dashb-modern-card-substat">Admins: <span>{admins.length}</span></div>
+                        <div className="dashb-modern-card-footer">
                             <span>New this week: {usersThisWeek}</span>
                         </div>
                     </div>
                     {/* Admin Accounts Card */}
                     <div
-                        className="dashboard-card modern-card admins-card clickable"
+                        className="dashb-card dashb-modern-card dashb-admins-card dashb-clickable"
                         onClick={() => handleCardClick("adminM")}
                         style={{ cursor: "pointer" }}
                         title="Go to Admin Accounts"
                     >
-                        <div className="modern-card-icon-box">
+                        <div className="dashb-modern-card-icon-box">
                             <img src={profIcon} alt="Admins" />
                         </div>
-                        <div className="modern-card-title">Admin Accounts</div>
-                        <div className="modern-card-stat">{admins.length}</div>
-                        <div className="modern-card-footer">
+                        <div className="dashb-modern-card-title">Admin Accounts</div>
+                        <div className="dashb-modern-card-stat">{admins.length}</div>
+                        <div className="dashb-modern-card-footer">
                             <span>Manage admins</span>
                         </div>
                     </div>
                     {/* Community Card */}
                     <div
-                        className="dashboard-card modern-card community-card clickable"
+                        className="dashb-card dashb-modern-card dashb-community-card dashb-clickable"
                         onClick={() => handleCardClick("community")}
                         style={{ cursor: "pointer" }}
                         title="Go to Community"
                     >
-                        <div className="modern-card-icon-box community">
+                        <div className="dashb-modern-card-icon-box dashb-community">
                             <img src={communityIcon} alt="Community" />
                         </div>
-                        <div className="modern-card-title">Community</div>
-                        <div className="modern-card-stat">{communityPosts.length}</div>
-                        <div className="modern-card-substat">Posts this week: <span>{communityPostsThisWeek}</span></div>
-                        <div className="modern-card-footer">
+                        <div className="dashb-modern-card-title">Community</div>
+                        <div className="dashb-modern-card-stat">{communityPosts.length}</div>
+                        <div className="dashb-modern-card-substat">Posts this week: <span>{communityPostsThisWeek}</span></div>
+                        <div className="dashb-modern-card-footer">
                             <span>Announcements: {announcements.length}</span>
                         </div>
                     </div>
                 </div>
-                <div className="dashboard-cards-row">
+                <div className="dashb-cards-row">
                     {/* Volunteer Card */}
                     <div
-                        className="dashboard-card modern-card volunteer-card clickable"
+                        className="dashb-card dashb-modern-card dashb-volunteer-card dashb-clickable"
                         onClick={() => handleCardClick("volunteers")}
                         style={{ cursor: "pointer" }}
                         title="Go to Volunteers"
                     >
-                        <div className="modern-card-icon-box volunteer">
+                        <div className="dashb-modern-card-icon-box dashb-volunteer">
                             <img src={volunteerIcon} alt="Volunteer" />
                         </div>
-                        <div className="modern-card-title">Volunteers</div>
-                        <div className="modern-card-stat">{acceptedVolunteersCount}</div>
-                        <div className="modern-card-substat">Pending: <span>{pendingRequestsCount}</span></div>
-                        <div className="modern-card-footer">
+                        <div className="dashb-modern-card-title">Volunteers</div>
+                        <div className="dashb-modern-card-stat">{acceptedVolunteersCount}</div>
+                        <div className="dashb-modern-card-substat">Pending: <span>{pendingRequestsCount}</span></div>
+                        <div className="dashb-modern-card-footer">
                             <span>Events: {volunteerEventsCount}</span>
                         </div>
                     </div>
                     {/* Donations Card */}
                     <div
-                        className="dashboard-card modern-card donation-card clickable"
+                        className="dashb-card dashb-modern-card dashb-donation-card dashb-clickable"
                         onClick={() => handleCardClick("donations")}
                         style={{ cursor: "pointer" }}
                         title="Go to Donations"
                     >
-                        <div className="modern-card-icon-box donation">
+                        <div className="dashb-modern-card-icon-box dashb-donation">
                             <img src={donationIcon} alt="Donations" />
                         </div>
-                        <div className="modern-card-title">Donations</div>
-                        <div className="modern-card-stat">{approvedDonationsCount}</div>
-                        <div className="modern-card-substat">Pending: <span>{pendingDonationsCount}</span></div>
-                        <div className="modern-card-footer">
+                        <div className="dashb-modern-card-title">Donations</div>
+                        <div className="dashb-modern-card-stat">{approvedDonationsCount}</div>
+                        <div className="dashb-modern-card-substat">Pending: <span>{pendingDonationsCount}</span></div>
+                        <div className="dashb-modern-card-footer">
                             <span>Donation Events: {donationEventsCount}</span>
                         </div>
                     </div>
                 </div>
                 {/* Event & Calendar Card */}
-                <div className="dashboard-cards-row">
+                <div className="dashb-cards-row">
                     <div
-                        className="dashboard-card modern-card wide event-card clickable"
+                        className="dashb-card dashb-modern-card dashb-wide dashb-event-card dashb-clickable"
                         onClick={() => handleCardClick("Mposting")}
                         style={{ cursor: "pointer" }}
                         title="Go to Events"
                     >
-                        <div className="modern-card-header-flex">
-                            <div className="modern-card-icon-box event">
+                        <div className="dashb-modern-card-header-flex">
+                            <div className="dashb-modern-card-icon-box dashb-event">
                                 <img src={eventIcon} alt="Event" />
                             </div>
-                            <span className="modern-card-title event">Event Management</span>
+                            <span className="dashb-modern-card-title dashb-event">Event Management</span>
                         </div>
-                        <div className="modern-card-flex-content">
-                            <div className="event-stat-stack">
+                        <div className="dashb-modern-card-flex-content">
+                            <div className="dashb-event-stat-stack">
                                 <div>
-                                    <div className="modern-card-stat">{events.length}</div>
-                                    <div className="modern-card-substat">Events this week: <span>{volunteerEventsThisWeek + donationEventsThisWeek}</span></div>
+                                    <div className="dashb-modern-card-stat">{events.length}</div>
+                                    <div className="dashb-modern-card-substat">Events this week: <span>{volunteerEventsThisWeek + donationEventsThisWeek}</span></div>
                                 </div>
-                                <div className="event-stat-row">
-                                    <span className="event-badge volunteer">Volunteer: {volunteerEventsCount}</span>
-                                    <span className="event-badge donation">Donation: {donationEventsCount}</span>
+                                <div className="dashb-event-stat-row">
+                                    <span className="dashb-event-badge dashb-volunteer">Volunteer: {volunteerEventsCount}</span>
+                                    <span className="dashb-event-badge dashb-donation">Donation: {donationEventsCount}</span>
                                 </div>
                             </div>
-                            <div className="modern-calendar-wrap">
-                                <div className="modern-calendar-header">
+                            <div className="dashb-modern-calendar-wrap">
+                                <div className="dashb-modern-calendar-header">
                                     <button onClick={e => { e.stopPropagation(); changeMonth(-1) }}>&lt;</button>
                                     <span>{monthName} {calendarYear}</span>
                                     <button onClick={e => { e.stopPropagation(); changeMonth(1) }}>&gt;</button>
                                 </div>
-                                <table className="modern-calendar-table">
+                                <table className="dashb-modern-calendar-table">
                                     <thead>
                                         <tr>
                                             <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th>
@@ -344,23 +344,23 @@ const Dashboard = ({ setActiveSection }) => {
                                                 {week.map((date, j) => {
                                                     const key = date ? date.toISOString().slice(0, 10) : '';
                                                     return (
-                                                        <td key={j} className={date ? "" : "modern-calendar-empty"}>
+                                                        <td key={j} className={date ? "" : "dashb-modern-calendar-empty"}>
                                                             {date && (
-                                                                <div className="modern-calendar-day-cell">
-                                                                    <span className="modern-calendar-date">{date.getDate()}</span>
+                                                                <div className="dashb-modern-calendar-day-cell">
+                                                                    <span className="dashb-modern-calendar-date">{date.getDate()}</span>
                                                                     {eventsByDate[key] && eventsByDate[key].map(ev => (
                                                                         <div key={ev._id || ev.eventTitleName}
-                                                                            className="modern-calendar-event"
+                                                                            className="dashb-modern-calendar-event"
                                                                             title={ev.eventTitleName}
                                                                         >
                                                                             {ev.eventPicture &&
                                                                                 <img
                                                                                     src={ev.eventPicture}
                                                                                     alt={ev.eventTitleName}
-                                                                                    className="modern-calendar-event-img"
+                                                                                    className="dashb-modern-calendar-event-img"
                                                                                 />
                                                                             }
-                                                                            <span className="modern-calendar-event-title">{ev.eventTitleName}</span>
+                                                                            <span className="dashb-modern-calendar-event-title">{ev.eventTitleName}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -376,48 +376,49 @@ const Dashboard = ({ setActiveSection }) => {
                         </div>
                     </div>
                     <div
-                        className="dashboard-card modern-card announcement-card clickable"
+                        className="dashb-card dashb-modern-card dashb-announcement-card dashb-clickable"
                         onClick={() => handleCardClick("announcements")}
                         style={{ cursor: "pointer" }}
                         title="Go to Announcements"
                     >
-                        <div className="modern-card-header-flex">
-                            <div className="modern-card-icon-box announcement">
+                        <div className="dashb-modern-card-header-flex">
+                            <div className="dashb-modern-card-icon-box dashb-announcement">
                                 <img src={announcementIcon} alt="Announcement" />
                             </div>
-                            <span className="modern-card-title announcement">Latest Announcement</span>
+                            <span className="dashb-modern-card-title dashb-announcement">Latest Announcement</span>
                         </div>
-                        <div className="modern-announcement-content">
+                        <div className="dashb-modern-announcement-content">
                             {latestAnnouncement ? (
                                 <>
-                                    <div className="modern-announcement-title">{latestAnnouncement.title}</div>
-                                    <div className="modern-announcement-desc">{latestAnnouncement.content}</div>
+                                    <div className="dashb-modern-announcement-title">{latestAnnouncement.title}</div>
+                                    <div className="dashb-modern-announcement-desc">{latestAnnouncement.content}</div>
                                     {latestAnnouncement.media && (
-                                        <img src={latestAnnouncement.media} alt="Announcement" className="modern-announcement-img" />
+                                        <img src={latestAnnouncement.media} alt="Announcement" className="dashb-modern-announcement-img" />
                                     )}
-                                    <div className="modern-announcement-meta">
-                                        <span className="modern-announcement-likes">&#10084; {latestAnnouncement.likes?.length || 0} Comments</span>
+                                    <div className="dashb-modern-announcement-meta">
+                                        <span className="dashb-modern-announcement-likes">&#10084; {latestAnnouncement.likes?.length || 0} Comments</span>
                                         <span>Posted {Math.floor((Date.now() - new Date(latestAnnouncement.createdAt)) / (1000 * 60 * 60))} hours ago</span>
                                     </div>
                                 </>
                             ) : (
-                                <span className="modern-announcement-none">No Announcements</span>
+                                <span className="dashb-modern-announcement-none">No Announcements</span>
                             )}
                         </div>
                     </div>
                 </div>
-                <div className="dashboard-cards-row">
+                <div className="dashb-cards-row">
                   {/* Donation Analytics Card */}
-                  <div className="dashboard-card modern-card" style={{ minWidth: 340, maxWidth: 420 }}>
+                  <div className="dashb-card dashb-modern-card" style={{ minWidth: 500, maxWidth: '100%' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                       <img src={donationIcon} alt="Donations" style={{ width: 32, height: 32 }} />
                       <span style={{ fontWeight: 700, fontSize: 18 }}>Donation Management</span>
                     </div>
+                    <div style={{display: 'flex', flexDirection: 'row', gap: 16}}>
                     {/* In-Kind Analytics */}
                     <div style={{ border: '1px solid #eee', borderRadius: 12, padding: 12, marginBottom: 18 }}>
                       <div style={{ fontWeight: 600, marginBottom: 6 }}>In-Kind Donation</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                        <ResponsiveContainer width={140} height={140}>
+                        <ResponsiveContainer width={320} height={250}>
                           <PieChart>
                             <Pie data={inKindPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={38} outerRadius={60} label>
                               {inKindPieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
@@ -438,7 +439,7 @@ const Dashboard = ({ setActiveSection }) => {
                     <div style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}>
                       <div style={{ fontWeight: 600, marginBottom: 6 }}>Cash Donation</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                        <ResponsiveContainer width={140} height={140}>
+                        <ResponsiveContainer width={320} height={250}>
                           <PieChart>
                             <Pie data={[
                               { name: 'Real', value: cashTotal, color: COLORS[0] },
@@ -470,6 +471,7 @@ const Dashboard = ({ setActiveSection }) => {
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
+                    </div>
                     </div>
                   </div>
                 </div>
