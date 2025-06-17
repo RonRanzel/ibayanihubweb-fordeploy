@@ -626,12 +626,26 @@ const DonationManagement = () => {
                         <span style={{color:'#fff',fontWeight:'bold',fontSize:22}}>Fraud Transaction Proof</span>
                         <button onClick={()=>setSelectedDonation(null)} style={{background:'none',border:'none',fontSize:28,color:'#fff',cursor:'pointer',marginLeft:8}}>&times;</button>
                     </div>
-                    {/* Proof Image */}
-                    {selectedDonation.photoUrl && (
-                        <div style={{display:'flex',justifyContent:'center',marginTop:18}}>
-                            <img src={selectedDonation.photoUrl} alt="Proof" style={{maxWidth:180,maxHeight:260,borderRadius:8,boxShadow:'0 2px 8px #bbb'}} />
-                        </div>
-                    )}
+                    {/* Proof Image (Reverted logic) */}
+                    {selectedDonation.proof || selectedDonation.photoUrl ? (
+                    <div style={{display:'flex',justifyContent:'center',marginTop:18}}>
+                      <img src={selectedDonation.proof || selectedDonation.photoUrl} alt="Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb'}} />
+                    </div>
+                  ) : null}
+                  {/* In-Kind/Cash Proof Image */}
+                  {selectedDonation.type === 'inKind' ? (
+                    <div style={{display:'flex',justifyContent:'center',marginTop:18}}>
+                      {selectedDonation.proof ? (
+                        <img src={selectedDonation.proof} alt="Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb'}} onError={e => {e.target.onerror=null;e.target.src='https://via.placeholder.com/220x180?text=No+Image';}} />
+                      ) : (
+                        <img src="https://via.placeholder.com/220x180?text=No+Image" alt="No Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb',opacity:0.7}} />
+                      )}
+                    </div>
+                  ) : (selectedDonation.photoUrl ? (
+                    <div style={{display:'flex',justifyContent:'center',marginTop:18}}>
+                      <img src={selectedDonation.photoUrl} alt="Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb'}} onError={e => {e.target.onerror=null;e.target.src='https://via.placeholder.com/220x180?text=No+Image';}} />
+                    </div>
+                  ) : null)}
                     {/* Details Card */}
                     <div style={{background:'#fff',margin:'24px 24px 0 24px',borderRadius:10,boxShadow:'0 1px 8px #eee',padding:'18px 18px 10px 18px',display:'flex',flexDirection:'column',gap:10}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
@@ -676,6 +690,20 @@ const DonationManagement = () => {
                       <img src={selectedDonation.proof || selectedDonation.photoUrl} alt="Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb'}} />
                     </div>
                   ) : null}
+                  {/* In-Kind/Cash Proof Image */}
+                  {selectedDonation.type === 'inKind' ? (
+                    <div style={{display:'flex',justifyContent:'center',marginTop:18}}>
+                      {selectedDonation.proof ? (
+                        <img src={selectedDonation.proof} alt="Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb'}} onError={e => {e.target.onerror=null;e.target.src='https://via.placeholder.com/220x180?text=No+Image';}} />
+                      ) : (
+                        <img src="https://via.placeholder.com/220x180?text=No+Image" alt="No Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb',opacity:0.7}} />
+                      )}
+                    </div>
+                  ) : (selectedDonation.photoUrl ? (
+                    <div style={{display:'flex',justifyContent:'center',marginTop:18}}>
+                      <img src={selectedDonation.photoUrl} alt="Proof" style={{maxWidth:220,maxHeight:320,borderRadius:10,boxShadow:'0 2px 8px #bbb'}} onError={e => {e.target.onerror=null;e.target.src='https://via.placeholder.com/220x180?text=No+Image';}} />
+                    </div>
+                  ) : null)}
                   <div style={{background:'#fff',margin:'24px 24px 0 24px',borderRadius:10,boxShadow:'0 1px 8px #eee',padding:'18px 18px 10px 18px',display:'flex',flexDirection:'column',gap:10}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
                       <div style={{display:'flex',alignItems:'center',gap:10}}>
